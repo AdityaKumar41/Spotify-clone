@@ -17,12 +17,12 @@ const Sidebar = () => {
         <div className='bg-[#121212] h-[85%] rounded'>
           <div className='p-4 flex place-items-center justify-between'>
             <div className='flex place-items-center gap-3'>
-              <img className='w-8' src={assets.stack_icon} alt="" />
-              <p className='font-semibold'>Your Library</p>
+              <img className='w-8 cursor-pointer' src={assets.stack_icon} alt="" />
+              <p className='font-semibold cursor-pointer'>Your Library</p>
             </div>
             <div className='flex items-center gap-3'>
-              <img className='w-5' src={assets.arrow_icon} alt="" />
-              <img className='w-5' src={assets.plus_icon} alt="" />
+              <img className='w-5 cursor-pointer' src={assets.arrow_icon} alt="" />
+              <img className='w-5  cursor-pointer' src={assets.plus_icon} alt="" />
             </div>
           </div>
           <div className='p-4 bg-[#242424] m-2 rounded font-semibold flex flex-col items-start justify-start gap-1 pl-4'>
