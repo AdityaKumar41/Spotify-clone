@@ -1,11 +1,11 @@
 import React from "react";
 import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
-import { useCurrentUser } from "../hooks/user";
+import { Link, useNavigate } from "react-router-dom";
+import { useMe } from "../hooks/useUser";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { user } = useCurrentUser();
+  const { data: user } = useMe();
   return (
     <>
       <div className="w-full flex justify-between items-center font-semibold">
@@ -31,11 +31,13 @@ const Navbar = () => {
             Install App
           </p>
           <div className="text-black w-7 h-7 rounded-full flex items-center justify-center">
-            <img
-              className="rounded-full"
-              src={user.profileImage}
-              alt="pr_image"
-            />
+            <Link to={`/profile`}>
+              <img
+                className="rounded-full"
+                src={user?.me?.profileImage}
+                alt="pr_image"
+              />
+            </Link>
           </div>
         </div>
       </div>

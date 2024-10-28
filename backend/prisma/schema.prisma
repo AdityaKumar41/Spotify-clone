@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -14,27 +11,106 @@ datasource db {
 }
 
 model User {
-  id           String       @id @default(uuid())
-  username     String    @unique
-  email        String    @unique
-  password     String?
-  profileImage String?
-  createdAt    DateTime  @default(now())
-  lastLogin    DateTime? @updatedAt
+  id                Int           @id @default(autoincrement())
+  username          String        @unique
+  email             String        @unique
+  password          String?       // For non-OAuth users
+  profileImage      String?
+  firstName         String?
+  lastName          String?
+  providerId        String?
+  isVerified        Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  lastLogin         DateTime?
+  
+  // Changed field names to match resolver
+  playlists         Playlist[]
+  savedTracks       Song[]        @relation("UserSavedTracks")    // Changed from likedSongs
+  savedAlbums       Album[]       @relation("UserSavedAlbums")    // Changed from likedAlbums
+  following         User[]        @relation("UserFollows")        // Changed from followedUsers
+  followers         User[]        @relation("UserFollows")        // Changed from followedBy
+  
+  // Keep these additional relations
+  followedArtists   Artist[]      @relation("UserFollowedArtists")
+  artists           Artist[]
+  country          String?
+  dateOfBirth      DateTime?
 }
 
 model Song {
-  id          String      @id @default(uuid())
-  title       String
-  artistId    String
-  duration    Int
-  releaseDate DateTime
-  fileUrl     String
-  artist      Artist   @relation(fields: [artistId], references: [id])
+  id              Int           @id @default(autoincrement())
+  title           String
+  duration        Int           // Duration in seconds
+  releaseDate     DateTime
+  fileUrl         String
+  coverImage      String?
+  lyrics          String?
+  isExplicit      Boolean       @default(false)
+  playCount       Int           @default(0)
+  artist          Artist        @relation(fields: [artistId], references: [id])
+  artistId        Int
+  album           Album?        @relation(fields: [albumId], references: [id])
+  albumId         Int?
+  genres          Genre[]
+  playlists       Playlist[]    @relation("PlaylistToSong")
+  savedByUsers    User[]        @relation("UserSavedTracks")     // Changed relation name
 }
 
 model Artist {
-  id   String    @id @default(uuid())
-  name String
-  Song Song[]
+  id              Int           @id @default(autoincrement())
+  name            String
+  bio             String?
+  image           String?
+  headerImage     String?       // Banner image for artist page
+  verified        Boolean       @default(false)
+  monthlyListeners Int          @default(0)
+  type            String?       // SOLO, BAND, etc.
+  facebook        String?
+  twitter         String?
+  instagram       String?
+  website         String?
+  songs           Song[]
+  albums          Album[]
+  user            User?         @relation(fields: [userId], references: [id])
+  userId          Int?
+  followers       User[]        @relation("UserFollowedArtists")
+  genres          Genre[]
 }
+
+model Album {
+  id              Int           @id @default(autoincrement())
+  title           String
+  releaseDate     DateTime
+  coverImage      String?
+  type            String        // SINGLE, EP, ALBUM
+  artist          Artist        @relation(fields: [artistId], references: [id])
+  artistId        Int
+  songs           Song[]
+  savedByUsers    User[]        @relation("UserSavedAlbums")     // Changed relation name
+  genres          Genre[]
+}
+
+model Playlist {
+  id              Int           @id @default(autoincrement())
+  title           String
+  description     String?
+  coverImage      String?
+  isPublic        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int
+  songs           Song[]        @relation("PlaylistToSong")
+  followers       Int           @default(0)
+}
+
+model Genre {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique
+  songs           Song[]
+  artists         Artist[]
+  albums          Album[]
+}
+
+
+

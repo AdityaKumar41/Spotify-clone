@@ -9,7 +9,12 @@ const JWTServices = require("./jwt/jwt");
 
 async function serverInit() {
   const app = express();
-  app.use(cors());
+  app.use(
+    cors({
+      origin: "http://localhost:5173",
+      credentials: true,
+    })
+  );
 
   app.use(bodyParser.json());
   const graphqlServer = new ApolloServer({

@@ -1,7 +1,9 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { VerifyGoogleAuthToken } from "../graphql/query/user";
+import { Button } from "@nextui-org/button";
+import { Input } from "@nextui-org/input";
+import { VerifyGoogleToken } from "../graphql/query/user";
 import { toast } from "react-hot-toast";
 import { graphqlClient } from "../api/app";
 
@@ -9,11 +11,10 @@ export default function Singup() {
   const queryClient = useQueryClient();
   const handleOnSuccess = useCallback(
     async (cred) => {
-      console.log(cred);
       const googleToken = cred.credential;
       if (!googleToken) return toast.error("Google Token not found!");
       const { verifyGoogleToken } = await graphqlClient.request(
-        VerifyGoogleAuthToken,
+        VerifyGoogleToken,
         {
           token: googleToken,
         }
@@ -44,44 +45,11 @@ export default function Singup() {
         </h2>
         <div className="mt-8 space-y-6">
           <div className="space-y-2">
-            {/*  */}
             <GoogleLogin onSuccess={handleOnSuccess} />
-            <button
-              variant="outline"
-              className="w-full bg-[#121212] text-white hover:bg-[#121212]/90"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              Continue with Facebook
-            </button>
-            <button
-              variant="outline"
-              className="w-full bg-[#121212] text-white hover:bg-[#121212]/90"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" />
-              </svg>
-              Continue with Apple
-            </button>
-            <button
-              variant="outline"
-              className="w-full bg-[#121212] text-white hover:bg-[#121212]/90"
-            >
-              Continue with phone number
-            </button>
           </div>
           <hr className="bg-[#282828]" />
           <form className="mt-8 space-y-6">
-            <div className="rounded-md shadow-sm -space-y-px">
+            <div className="rounded-md shadow-sm -space-y-px flex flex-col gap-4">
               <div>
                 <label htmlFor="email-address" className="sr-only">
                   Email address
@@ -92,7 +60,7 @@ export default function Singup() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="bg-[#121212] text-white border-[#282828] focus:ring-[#1DB954] focus:border-[#1DB954]"
+                  className="bg-[#121212] text-white border-[#282828] focus:ring-[#1DB954] focus:border-[#1DB954] w-full p-3 rounded-md"
                   placeholder="Email or username"
                 />
               </div>
@@ -106,16 +74,16 @@ export default function Singup() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="bg-[#121212] text-white border-[#282828] focus:ring-[#1DB954] focus:border-[#1DB954]"
+                  className="bg-[#121212] text-white border-[#282828] focus:ring-[#1DB954] focus:border-[#1DB954] w-full p-3 rounded-md"
                   placeholder="Password"
                 />
               </div>
             </div>
 
             <div>
-              <button className="w-full bg-[#1DB954] hover:bg-[#1ED760] text-black font-bold py-3 px-4 rounded-full">
+              <Button className="w-full bg-[#1DB954] hover:bg-[#1ED760] text-black font-bold py-3 px-4 rounded-full">
                 Log In
-              </button>
+              </Button>
             </div>
           </form>
           <div className="text-center">
