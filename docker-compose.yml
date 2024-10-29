@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/src/app                 # Mount backend source code
+      - ./backend/node_modules:/src/app/node_modules  # Generate node_modules on the host
+    environment:
+      - NODE_ENV=development
+    command: npm run dev                   # Run backend in development mode
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "5173:5173"                        # Vite dev server port
+    volumes:
+      - ./client:/app                      # Mount frontend source code
+      - ./client/node_modules:/app/node_modules  # Generate node_modules on the host
+    environment:
+      - NODE_ENV=development
+    command: npm run dev                   # Run frontend in development mode
+    depends_on:
+      - backend
