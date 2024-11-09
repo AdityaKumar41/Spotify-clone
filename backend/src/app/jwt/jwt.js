@@ -10,6 +10,7 @@ class JWTServices {
     const payload = {
       id: user.id,
       email: user.email,
+      artistId: user.artist?.id,
     };
 
     // Sign the JWT token

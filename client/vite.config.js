@@ -14,4 +14,8 @@ export default defineConfig({
   define: {
     global: "window",
   },
+  // server: {
+  //   host: '0.0.0.0', // Expose on network
+  //   // port: 3000,       // Specify your desired port, e.g., 3000
+  // },
 });

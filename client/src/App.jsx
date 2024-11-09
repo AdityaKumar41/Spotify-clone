@@ -18,12 +18,11 @@ export const App = () => {
     <>
       {user?.me ? (
         <div className="h-screen bg-black">
-          <div className="h-[90%] flex">
+          <div className={`${track ? "h-[90%]" : "h-full"} flex`}>
             <Sidebar />
             <Display />
           </div>
-          <Player />
-          <audio ref={audioRef} src={track.file} preload="auto"></audio>
+          {track && <Player />}
         </div>
       ) : (
         <Singup />

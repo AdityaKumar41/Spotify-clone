@@ -11,7 +11,7 @@ import {
   IconMusic,
   IconJumpRope,
 } from "@tabler/icons-react";
-// import { useCreateArtist } from "../hooks/user";
+import { useCreateArtist, useGetArtist } from "../hooks/useArtist";
 import { NotFound } from "./NotFound";
 import { graphqlClient } from "../api/app";
 import { GetSignedURL } from "../graphql/query/user";
@@ -21,7 +21,11 @@ import { useMe } from "../hooks/useUser";
 
 export default function Artist() {
   const { mutate } = useCreateArtist();
-  const { user } = useMe();
+  const { data: user } = useMe();
+
+  console.log(user);
+
+  // const { data: artist } = useGetArtist(11);
   const [imagePreview, setImagePreview] = useState(null);
 
   // React Hook Form setup
@@ -53,33 +57,83 @@ export default function Artist() {
 
   // Handle form submission
   const onSubmit = async (data) => {
-    console.log("Form Data:", data);
-    if (!data.profilePicture) throw new Error("Profile picture is required");
-    const { getSignedURLArtist } = await graphqlClient.request(GetSignedURL, {
-      imageName: data.profilePicture[0].name,
-      imageType: data.profilePicture[0].type,
-    });
+    try {
+      if (!data.profilePicture?.[0]) {
+        toast.error("Profile picture is required");
+        return;
+      }
 
-    await axios.put(getSignedURLArtist, data.profilePicture[0], {
-      headers: {
-        "Content-Type": data.profilePicture[0].type,
-      },
-    });
+      console.log("Initial Form Data:", data); // Debug log
 
-    // console.log("Response:", response);
-    const url = new URL(getSignedURLArtist);
-    const path = `${url.origin}${url.pathname}`;
+      // 1. Get Signed URL for image upload
+      const { getSignedURL } = await graphqlClient.request(GetSignedURL, {
+        fileName: data.profilePicture[0].name,
+        fileType: data.profilePicture[0].type,
+        type: 'profile' // Specify the type if required by your backend
+      });
 
-    await mutate({
-      name: data.artistName,
-      image: path,
-      type: data.genre,
-      bio: data.bio,
-      facebook: data.facebook,
-      twitter: data.twitter,
-      instagram: data.instagram,
-    });
-    // console.log("Image URL:", path);
+      console.log("Got signed URL:", getSignedURL); // Debug log
+
+      // 2. Upload image to S3
+      await axios.put(getSignedURL, data.profilePicture[0], {
+        headers: {
+          "Content-Type": data.profilePicture[0].type,
+        },
+      });
+
+      // 3. Extract the final image URL
+      const imageUrl = getSignedURL.split('?')[0]; // Get the base URL without query parameters
+
+      console.log("Final image URL:", imageUrl); // Debug log
+
+      // 4. Prepare mutation data
+      const mutationData = {
+        artistName: data.artistName.trim(),
+        bio: data.bio?.trim() || null,
+        profilePicture: imageUrl,
+        facebook: data.facebook?.trim() || null,
+        twitter: data.twitter?.trim() || null,
+        instagram: data.instagram?.trim() || null,
+        website: data.website?.trim() || null,
+        country: data.country?.trim() || null,
+        genre: Array.isArray(data.genre) 
+          ? data.genre.map(g => g.trim()) 
+          : data.genre 
+            ? [data.genre.trim()] 
+            : []
+      };
+
+      console.log("Prepared Mutation Data:", mutationData); // Debug log
+
+      // 5. Execute mutation
+      const response = await mutate(mutationData);
+      
+      console.log("Mutation Response:", response); // Debug log
+
+      toast.success("Artist profile created successfully!");
+      
+      // Optional: Redirect or perform other actions on success
+      // navigate('/dashboard');
+      
+    } catch (error) {
+      console.error("Error creating artist profile:", {
+        message: error.message,
+        response: error.response?.data,
+        graphqlErrors: error.response?.errors,
+        stack: error.stack
+      });
+
+      // More specific error messages
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message.includes("Network")) {
+        toast.error("Network error. Please check your connection.");
+      } else if (error.message.includes("Unauthorized")) {
+        toast.error("You must be logged in to create an artist profile.");
+      } else {
+        toast.error("Failed to create artist profile. Please try again.");
+      }
+    }
   };
 
   return (
@@ -185,16 +239,53 @@ export default function Artist() {
               )}
             </div>
 
+            {/* Country Selection */}
+            <div className="space-y-2">
+              <select
+                {...register("country", { required: "Country is required" })}
+                className="bg-[#282828] border-[#282828] text-white placeholder-[#535353] focus:ring-[#1DB954] focus:border-[#1DB954] w-full p-3 rounded-md"
+                aria-label="Select Country"
+              >
+                <option value="" disabled selected>
+                  Select your country
+                </option>
+                <option value="US">United States</option>
+                <option value="UK">United Kingdom</option>
+                <option value="CA">Canada</option>
+                <option value="AU">Australia</option>
+                {/* Add more countries as needed */}
+              </select>
+              {errors.country && (
+                <p className="text-red-500 text-sm">{errors.country.message}</p>
+              )}
+            </div>
+
+            {/* Website URL */}
+            <div className="space-y-2">
+              <input
+                {...register("website", {
+                  pattern: {
+                    value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+                    message: "Invalid website URL",
+                  },
+                })}
+                placeholder="Your website URL"
+                className="bg-[#282828] border-[#282828] text-white placeholder-[#535353] focus:ring-[#1DB954] focus:border-[#1DB954] w-full p-3 rounded-md"
+                aria-label="Website URL"
+              />
+              {errors.website && (
+                <p className="text-red-500 text-sm">{errors.website.message}</p>
+              )}
+            </div>
+
             {/* Social Media Links */}
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <IconBrandFacebook className="text-[#1877F2]" />
                 <input
                   {...register("facebook", {
-                    required: false,
                     pattern: {
-                      value:
-                        /^(https?:\/\/)?(www\.)?facebook.com\/[A-Za-z0-9-_]+$/,
+                      value: /^(https?:\/\/)?(www\.)?facebook.com\/[A-Za-z0-9-_]+$/,
                       message: "Invalid Facebook URL",
                     },
                   })}
@@ -203,9 +294,7 @@ export default function Artist() {
                   aria-label="Facebook Profile URL"
                 />
                 {errors.facebook && (
-                  <p className="text-red-500 text-sm">
-                    {errors.facebook.message}
-                  </p>
+                  <p className="text-red-500 text-sm">{errors.facebook.message}</p>
                 )}
               </div>
 
@@ -213,10 +302,8 @@ export default function Artist() {
                 <IconBrandTwitter className="text-[#1DA1F2]" />
                 <input
                   {...register("twitter", {
-                    required: false,
                     pattern: {
-                      value:
-                        /^(https?:\/\/)?(www\.)?twitter.com\/[A-Za-z0-9-_]+$/,
+                      value: /^(https?:\/\/)?(www\.)?twitter.com\/[A-Za-z0-9-_]+$/,
                       message: "Invalid Twitter URL",
                     },
                   })}
@@ -225,9 +312,7 @@ export default function Artist() {
                   aria-label="Twitter Profile URL"
                 />
                 {errors.twitter && (
-                  <p className="text-red-500 text-sm">
-                    {errors.twitter.message}
-                  </p>
+                  <p className="text-red-500 text-sm">{errors.twitter.message}</p>
                 )}
               </div>
 
@@ -235,10 +320,8 @@ export default function Artist() {
                 <IconBrandInstagram className="text-[#E4405F]" />
                 <input
                   {...register("instagram", {
-                    required: false,
                     pattern: {
-                      value:
-                        /^(https?:\/\/)?(www\.)?instagram.com\/[A-Za-z0-9-_]+$/,
+                      value: /^(https?:\/\/)?(www\.)?instagram.com\/[A-Za-z0-9-_]+$/,
                       message: "Invalid Instagram URL",
                     },
                   })}
@@ -247,9 +330,7 @@ export default function Artist() {
                   aria-label="Instagram Profile URL"
                 />
                 {errors.instagram && (
-                  <p className="text-red-500 text-sm">
-                    {errors.instagram.message}
-                  </p>
+                  <p className="text-red-500 text-sm">{errors.instagram.message}</p>
                 )}
               </div>
             </div>

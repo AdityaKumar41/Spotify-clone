@@ -12,7 +12,7 @@ exports.type = `#graphql
     savedAlbums: [Album!]       # Changed from savedAlbums
     following: [User!]        # Changed from following
     followers: [User!]          # Changed from followers
-    artists: [Artist!]
+    artist: Artist
     # New fields
     firstName: String
     lastName: String
@@ -123,11 +123,9 @@ exports.type = `#graphql
   }
 
   input CreateArtistInput {
-    name: String!
+    artistName: String!
     bio: String
-    image: String
-    coverImage: String
-    type: ArtistType!
+    profilePicture: String
     facebook: String
     twitter: String
     instagram: String
@@ -189,9 +187,11 @@ exports.type = `#graphql
 
   input CreateSongInput {
     title: String!
-    artistId: ID!
+    coverImage: String
     duration: Int!
+    releaseDate: String!
     fileUrl: String!
+    genre: [String!]!
   }
 
   input UpdateSongInput {

@@ -6,8 +6,13 @@ import Profile from "./Profile";
 import Artist from "./Artist";
 import { albumsData } from "../assets/assets";
 import CreateArtist from "./CreateArtist";
-
+import { useMe } from "../hooks/useUser";
+import ArtistPage from "./ArtistProfile";
+import Search from "./Search";
+import DisplayGenre from "./DisplayGenre";
+import { NotFound } from "./NotFound";
 const Display = () => {
+  const { data: user } = useMe();
   const displayref = useRef();
   const location = useLocation();
   const isAlbum = location.pathname.includes("album");
@@ -38,10 +43,14 @@ const Display = () => {
       className="w-full m-2 px-6 pt-4 rounded bg-[#121212] text-white overflow-auto lg:w-3/4 lg:ml-0"
     >
       <Routes>
-        <Route path="/artist" element={<Artist />} />
+        <Route path="/artist" element={user?.me?.artist ?<ArtistPage /> : <Artist />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<DisplayHome />} />
-        <Route path="/album/:id" element={<DisplayAlbum />} />
+        <Route path="/artists/:id" element={<DisplayAlbum />} />
+        <Route path="/genres/:id" element={<DisplayGenre />} />
+        <Route path="/search" element={<Search />} />
+        {/* not found */}
+        <Route path="*" element={<NotFound/>} />
       </Routes>
     </div>
   );

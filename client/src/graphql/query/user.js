@@ -17,7 +17,11 @@ export const GetMe = gql`
       email
       username
       profileImage
-      
+      artist {
+        id
+        name
+        image
+      }
     }
   }
 `;

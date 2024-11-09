@@ -32,7 +32,7 @@ model User {
   
   // Keep these additional relations
   followedArtists   Artist[]      @relation("UserFollowedArtists")
-  artists           Artist[]
+  artist            Artist?       // Changed: One user can have one artist profile
   country          String?
   dateOfBirth      DateTime?
 }
@@ -72,7 +72,7 @@ model Artist {
   songs           Song[]
   albums          Album[]
   user            User?         @relation(fields: [userId], references: [id])
-  userId          Int?
+  userId          Int?         @unique  // Changed: Added unique constraint
   followers       User[]        @relation("UserFollowedArtists")
   genres          Genre[]
 }

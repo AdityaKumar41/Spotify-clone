@@ -21,7 +21,7 @@ exports.mutations = `#graphql
     unfollowArtist(artistId: ID!): Boolean!
     
     # Artist mutations
-    createArtist(input: CreateArtistInput!): Artist!
+    createArtist(artistName: String!, bio: String, profilePicture: String, facebook: String, twitter: String, instagram: String, website: String, country: String, genre: [String!]): Artist!
     updateArtistProfile(input: UpdateArtistInput!): Artist!
     deleteArtist(id: ID!): Boolean!
     verifyArtist(artistId: ID!): Artist!

@@ -14,7 +14,7 @@ exports.queries = `#graphql
     
     # Artist queries
     getArtist(id: ID!): Artist
-    getArtists(ids: [ID!]!): [Artist!]!
+    getArtists: [Artist!]!
     searchArtists(query: String!): [Artist!]!
     getArtistTopTracks(id: ID!): [Track!]!
     
@@ -31,4 +31,13 @@ exports.queries = `#graphql
     # Upload related
     getSignedURLArtist(imageName: String!, imageType: String!): String
     getSignedURL(fileName: String!, fileType: String!): String
+
+    # Song queries
+    getSongs: [Song!]!
+    getSongByArtist(artistId: ID!): [Song!]!
+    searchSongs(query: String!): [Song!]!
+
+    # Genre queries
+    getGenres: [Genre!]!
+    getGenre(id: ID!): Genre
 `;

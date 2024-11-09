@@ -18,6 +18,8 @@
     "@nextui-org/input": "^2.2.5",
     "@nextui-org/popover": "^2.1.29",
     "@nextui-org/select": "^2.2.7",
+    "@nextui-org/skeleton": "^2.0.32",
+    "@nextui-org/spacer": "^2.0.33",
     "@nextui-org/system": "^2.2.6",
     "@nextui-org/theme": "^2.2.11",
     "@react-oauth/google": "^0.12.1",

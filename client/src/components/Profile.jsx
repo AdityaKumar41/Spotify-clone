@@ -42,7 +42,7 @@ export default function Profile() {
       <Navbar />
       <div className="flex flex-col min-h-screen ">
         <header className="flex flex-col items-center pt-16 pb-8 px-4">
-          {user.profileImage ? (
+          {user?.me?.profileImage ? (
             <img
               src={user?.me?.profileImage}
               className="w-40 h-40 mb-4 rounded-full"

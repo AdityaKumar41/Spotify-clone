@@ -24,7 +24,7 @@ export default function Singup() {
       if (verifyGoogleToken)
         window.localStorage.setItem("fy_token", verifyGoogleToken);
 
-      await queryClient.invalidateQueries({ queryKey: ["Login_User"] });
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
     [queryClient]
   );

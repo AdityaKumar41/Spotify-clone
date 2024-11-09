@@ -671,6 +671,23 @@
   resolved "https://registry.npmjs.org/@nextui-org/shared-utils/-/shared-utils-2.0.8.tgz"
   integrity sha512-ZEtoMPXS+IjT8GvpJTS9IWDnT1JNCKV+NDqqgysAf1niJmOFLyJgl6dh/9n4ufcGf1GbSEQN+VhJasEw7ajYGQ==
 
+"@nextui-org/skeleton@^2.0.32":
+  version "2.0.32"
+  resolved "https://registry.npmjs.org/@nextui-org/skeleton/-/skeleton-2.0.32.tgz"
+  integrity sha512-dS0vuRrc4oWktW3wa/KFhcBNnV0oiDqKXP4BqRj7wgS01fOAqj3cJiqwUDLKO8GbEnxLkbqLBFcUoLgktpRszQ==
+  dependencies:
+    "@nextui-org/react-utils" "2.0.17"
+    "@nextui-org/shared-utils" "2.0.8"
+
+"@nextui-org/spacer@^2.0.33":
+  version "2.0.33"
+  resolved "https://registry.npmjs.org/@nextui-org/spacer/-/spacer-2.0.33.tgz"
+  integrity sha512-0YDtovMWuAVgBvVXUmplzohObGxMPFhisHXn6v+0nflAE9LiVeiXf121WVOEMrd08S7xvmrAANcMwo4TsYi49g==
+  dependencies:
+    "@nextui-org/react-utils" "2.0.17"
+    "@nextui-org/shared-utils" "2.0.8"
+    "@nextui-org/system-rsc" "2.1.6"
+
 "@nextui-org/spinner@2.0.34":
   version "2.0.34"
   resolved "https://registry.npmjs.org/@nextui-org/spinner/-/spinner-2.0.34.tgz"
