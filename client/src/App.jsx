@@ -12,12 +12,11 @@ export const App = () => {
   const { audioRef, track } = useContext(PlayerContext);
   const { data: user } = useMe();
 
-
   console.log(user);
   return (
     <>
       {user?.me ? (
-        <div className="h-screen bg-black">
+        <div className="h-lvh bg-black">
           <div className={`${track ? "h-[90%]" : "h-full"} flex`}>
             <Sidebar />
             <Display />

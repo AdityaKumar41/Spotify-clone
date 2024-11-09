@@ -2,14 +2,15 @@ import { Avatar, AvatarIcon } from "@nextui-org/avatar";
 import { Button } from "@nextui-org/button";
 import { Chip } from "@nextui-org/chip";
 import {
+  IconArrowLeft,
   IconMathGreater,
   IconMusic,
   IconPlaystationCircle,
   IconUser,
 } from "@tabler/icons-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { albumsData, songsData } from "../assets/assets";
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 import Navbar from "./Navbar";
 // import { useCurrentUser } from "../hooks/user";
@@ -19,94 +20,199 @@ import { useMe } from "../hooks/useUser";
 export default function Profile() {
   const { data: user } = useMe();
   const { playWithId } = useContext(PlayerContext);
+  const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const isArtist = user?.me?.artist;
 
-  // if (!albumData)
-  //   return (
-  //     <>
-  //       <Navbar />
-  //       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-  //         <IconUser className="w-24 h-24 text-gray-500 mb-6" />
-  //         <h1 className="text-4xl font-bold mb-4">No User Found</h1>
-  //         <p className="text-xl text-gray-400 mb-8">
-  //           We couldn't find the user you're looking for.
-  //         </p>
-  //         <Button className="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-3 rounded-full">
-  //           <Link to={"/"}>Go to Home</Link>
-  //         </Button>
-  //       </main>
-  //     </>
-  //   );
-  console.log(user);
+  // Add scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 340);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("fy_token");
+    window.location.href = "/";
+  };
+
   return (
-    <>
-      <Navbar />
-      <div className="flex flex-col min-h-screen ">
-        <header className="flex flex-col items-center pt-16 pb-8 px-4">
-          {user?.me?.profileImage ? (
+    <div className="bg-black min-h-screen text-white">
+      
+      {/* Sticky Header - Shows on Scroll */}
+      <div className={` bg-[#121212] z-20 py-4 px-4 md:px-[32px] transition-all duration-300`}>
+        <div className="flex items-center gap-4">
+          <div className="cursor-pointer hover:bg-[#282828] rounded-full p-2" onClick={() => navigate(-1)}>
+            <IconArrowLeft className="w-[20px] h-[20px] text-[#a7a7a7]" />
+          </div>
+          {isArtist ? (
             <img
-              src={user?.me?.profileImage}
-              className="w-40 h-40 mb-4 rounded-full"
+              src={user?.me?.artist.image || user?.me?.profileImage}
+              alt="Artist"
+              className="w-[40px] h-[40px] rounded-full object-cover"
             />
           ) : (
-            <Avatar className="w-40 h-40 mb-4" />
-          )}
-          <h1 className="text-3xl font-bold mb-2">{user.me?.username}</h1>
-          <p className="text-sm text-gray-400 mb-4">
-            1,234 followers • 567 following
-          </p>
-          <div className=" flex flex-col gap-4">
-            <Button className="bg-green-500 hover:bg-green-600 text-black font-bold">
-              Edit profile
-            </Button>
-            <Chip
-              variant="shadow"
-              classNames={{
-                base: "bg-gradient-to-br from-indigo-500 to-green-500 border-small border-white/50 shadow-green-500/30 p-4",
-                content: "drop-shadow shadow-black text-white",
-              }}
-            >
-              <Link to={"/artist"}>Switch to Artist!</Link>
-            </Chip>
-          </div>
-        </header>
-        <main className="flex-1 p-6">
-          {/* <h2 className="text-2xl font-bold mb-4">Popular</h2>
-          {songsData.map((item, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-2 items-center text-[#a7a7a7] hover:bg-[#ffffff2b] cursor-pointer"
-            >
-              <p onClick={() => playWithId(item.id)} className="text-white">
-                <b className="mr-4 text-[#a7a7a7]">{index + 1}</b>
-                <img className="inline w-10 mr-5" src={item.image} alt="" />
-                {item.name}
-              </p>
-              <p className="text-[15px] ">{albumData.name}</p>
-              <p className="text-[15px] hidden sm:block cursor-pointer">
-                5 days ago
-              </p>
-              <p className="text-[15px] text-center">{item.duration}</p>
-            </div>
-          ))} */}
-          <h2 className="text-2xl font-bold my-4">Public Playlists</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((playlist) => (
-              <div key={playlist} className="bg-gray-900 p-4 rounded-lg">
-                <div className="relative w-full pb-[100%] mb-4">
-                  <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                    <IconMusic className="w-12 h-12 text-gray-600" />
-                  </div>
-                  <button className="absolute bottom-2 right-2 bg-green-500 rounded-full p-2 opacity-0 transition-opacity group-hover:opacity-100">
-                    <IconPlaystationCircle className="w-6 h-6 text-black" />
-                  </button>
-                </div>
-                <h3 className="font-semibold mb-1">Playlist {playlist}</h3>
-                <p className="text-sm text-gray-400">By John Doe</p>
+            user?.me?.profileImage ? (
+              <img
+                src={user.me.profileImage}
+                alt="Profile"
+                className="w-[40px] h-[40px] rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-[40px] h-[40px] bg-[#282828] rounded-full flex items-center justify-center">
+                <IconUser className="w-[20px] h-[20px] text-[#7f7f7f]" />
               </div>
-            ))}
-          </div>
-        </main>
+            )
+          )}
+          <h1 className="text-lg font-bold">
+            {isArtist ? (user?.me?.artist.name || 'Artist Name') : (user?.me?.username || 'User Name')}
+          </h1>
+        </div>
       </div>
-    </>
+
+      {/* Main Content */}
+      <div className="relative">
+        {/* Background Gradient */}
+        <div className="absolute top-0 left-0 w-full h-[340px] bg-gradient-to-b from-[#454545] to-[#121212]" />
+        
+        {/* Profile Info */}
+        <div className="relative pt-[96px] px-[32px]">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+            {/* Profile/Artist Image */}
+            {isArtist ? (
+              <img
+                src={user?.me?.artist?.image || user?.me?.profileImage}
+                alt="Artist"
+                className="w-[192px] h-[192px] md:w-[232px] md:h-[232px] shadow-2xl rounded-full object-cover"
+              />
+            ) : (
+              user?.me?.profileImage ? (
+                <img
+                  src={user.me.profileImage}
+                  alt="Profile"
+                  className="w-[192px] h-[192px] md:w-[232px] md:h-[232px] shadow-2xl rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-[192px] h-[192px] md:w-[232px] md:h-[232px] bg-[#282828] rounded-full flex items-center justify-center">
+                  <IconUser className="w-[96px] h-[96px] text-[#7f7f7f]" />
+                </div>
+              )
+            )}
+            
+            {/* Profile Text */}
+            <div className="flex flex-col text-center md:text-left">
+              <span className="text-sm font-bold">{isArtist ? 'Artist' : 'Profile'}</span>
+              <h1 className="text-[2rem] md:text-[3rem] font-bold mt-2 mb-4">
+                {user?.me?.artist.name || 'User Name'}
+              </h1>
+              <div className="flex items-center gap-2 text-sm text-[#a7a7a7]">
+                {isArtist ? (
+                  <>
+                    <span>{user?.me?.monthlyListeners || 0} Monthly Listeners</span>
+                    <span>•</span>
+                    <span>{user?.me?.totalSongs || 0} Songs</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{user?.me?.playlistCount || 0} Public Playlists</span>
+                    <span>•</span>
+                    <span>{user?.me?.followersCount || 0} followers</span>
+                    <span>•</span>
+                    <span>{user?.me?.followingCount || 0} following</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons - Updated for artist */}
+        <div className="px-[32px] py-6 flex flex-wrap gap-4">
+          <Button
+            className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold rounded-full px-8 py-3 text-[14px]"
+          >
+            Edit profile
+          </Button>
+          {isArtist ? (
+            <Button
+              className="bg-transparent hover:bg-[#ffffff1a] border border-[#ffffff4d] text-white font-bold rounded-full px-8 py-3 text-[14px]"
+            >
+              <Link to="/artist">Upload Songs</Link>
+            </Button>
+          ) : (
+            <Button
+              className="bg-transparent hover:bg-[#ffffff1a] border border-[#ffffff4d] text-white font-bold rounded-full px-8 py-3 text-[14px]"
+            >
+              <Link to="/artist">Switch to Artist</Link>
+            </Button>
+          )}
+          <Button
+            onClick={handleLogout}
+            className="bg-transparent hover:bg-[#ffffff1a] border border-[#ffffff4d] text-white font-bold rounded-full px-8 py-3 text-[14px]"
+          >
+            Logout
+          </Button>
+        </div>
+
+        {/* Content Sections */}
+        <div className="bg-[#121212] relative">
+          {/* Playlists Grid */}
+          <div className="px-[32px] py-4">
+            <h2 className="text-2xl font-bold mb-4">Public Playlists</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              {[1, 2, 3, 4, 5].map((playlist) => (
+                <div 
+                  key={playlist} 
+                  className="bg-[#181818] hover:bg-[#282828] transition-all duration-300 p-4 rounded-lg group cursor-pointer"
+                >
+                  <div className="relative mb-4">
+                    <div className="aspect-square bg-[#282828] rounded-md flex items-center justify-center">
+                      <IconMusic className="w-12 h-12 text-[#7f7f7f]" />
+                    </div>
+                    <button 
+                      className="absolute bottom-2 right-2 bg-[#1ed760] rounded-full p-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-xl hover:scale-105 hover:bg-[#1fdf64]"
+                    >
+                      <IconPlaystationCircle className="w-6 h-6 text-black" />
+                    </button>
+                  </div>
+                  <h3 className="font-bold text-base mb-2 truncate">Playlist {playlist}</h3>
+                  <p className="text-sm text-[#a7a7a7] truncate">By {user?.me?.username}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Songs */}
+          <div className="px-[32px] py-4">
+            <h2 className="text-2xl font-bold mb-4">Top Songs</h2>
+            <div className="flex flex-col">
+              {songsData.slice(0, 5).map((song, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[16px,4fr,2fr] md:grid-cols-[16px,4fr,2fr,1fr] items-center p-2 rounded-md hover:bg-[#ffffff1a] group"
+                >
+                  <span className="text-[#a7a7a7] group-hover:hidden">{index + 1}</span>
+                  <button className="hidden group-hover:block text-white">
+                    <IconPlaystationCircle className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center gap-4">
+                    <img src={song.image} alt={song.name} className="w-10 h-10" />
+                    <div>
+                      <p className="text-white font-normal line-clamp-1">{song.name}</p>
+                      <p className="text-sm text-[#a7a7a7] line-clamp-1">Artist name</p>
+                    </div>
+                  </div>
+                  <span className="hidden md:block text-[#a7a7a7] truncate">Album name</span>
+                  <span className="text-white/60">{song.duration}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

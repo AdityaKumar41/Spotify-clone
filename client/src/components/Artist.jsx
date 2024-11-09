@@ -63,117 +63,136 @@ export default function Artist() {
         return;
       }
 
-      console.log("Initial Form Data:", data); // Debug log
+      // Add loading toast
+      const loadingToast = toast.loading('Creating artist profile...');
+
+      // Log the file details
+      console.log("Profile Picture File:", {
+        name: data.profilePicture[0].name,
+        type: data.profilePicture[0].type,
+        size: data.profilePicture[0].size
+      });
 
       // 1. Get Signed URL for image upload
       const { getSignedURL } = await graphqlClient.request(GetSignedURL, {
-        fileName: data.profilePicture[0].name,
+        fileName: `artist/${Date.now()}-${data.profilePicture[0].name}`, // Add timestamp to prevent duplicates
         fileType: data.profilePicture[0].type,
-        type: 'profile' // Specify the type if required by your backend
+        type: "profile",
       });
 
-      console.log("Got signed URL:", getSignedURL); // Debug log
-
-      // 2. Upload image to S3
-      await axios.put(getSignedURL, data.profilePicture[0], {
-        headers: {
-          "Content-Type": data.profilePicture[0].type,
-        },
-      });
+      // 2. Upload image to S3 with error handling
+      try {
+        await axios.put(getSignedURL, data.profilePicture[0], {
+          headers: {
+            "Content-Type": data.profilePicture[0].type,
+          },
+          // Add timeout and other axios configs
+          timeout: 30000, // 30 seconds timeout
+        });
+      } catch (uploadError) {
+        console.error("S3 Upload Error:", uploadError);
+        toast.error("Failed to upload image. Please try again.");
+        toast.dismiss(loadingToast);
+        return;
+      }
 
       // 3. Extract the final image URL
-      const imageUrl = getSignedURL.split('?')[0]; // Get the base URL without query parameters
+      const imageUrl = getSignedURL.split("?")[0];
 
-      console.log("Final image URL:", imageUrl); // Debug log
-
-      // 4. Prepare mutation data
+      // 4. Prepare mutation data with validation
       const mutationData = {
-        artistName: data.artistName.trim(),
-        bio: data.bio?.trim() || null,
+        artistName: data.artistName?.trim(),
+        bio: data.bio?.trim() || "",
         profilePicture: imageUrl,
-        facebook: data.facebook?.trim() || null,
-        twitter: data.twitter?.trim() || null,
-        instagram: data.instagram?.trim() || null,
-        website: data.website?.trim() || null,
-        country: data.country?.trim() || null,
-        genre: Array.isArray(data.genre) 
-          ? data.genre.map(g => g.trim()) 
-          : data.genre 
-            ? [data.genre.trim()] 
-            : []
+        facebook: data.facebook?.trim() || "",
+        twitter: data.twitter?.trim() || "",
+        instagram: data.instagram?.trim() || "",
+        website: data.website?.trim() || "",
+        country: data.country?.trim(),
+        genre: data.genre ? [data.genre.trim()] : [],
       };
 
-      console.log("Prepared Mutation Data:", mutationData); // Debug log
+      // Validate required fields
+      if (!mutationData.artistName || !mutationData.country) {
+        toast.error("Please fill in all required fields");
+        toast.dismiss(loadingToast);
+        return;
+      }
 
-      // 5. Execute mutation
+      // 5. Execute mutation with await
       const response = await mutate(mutationData);
-      
-      console.log("Mutation Response:", response); // Debug log
 
+      // Success handling
+      toast.dismiss(loadingToast);
       toast.success("Artist profile created successfully!");
-      
-      // Optional: Redirect or perform other actions on success
-      // navigate('/dashboard');
-      
+
     } catch (error) {
-      console.error("Error creating artist profile:", {
+      console.error("Detailed Error:", {
+        name: error.name,
         message: error.message,
-        response: error.response?.data,
+        response: error.response,
+        stack: error.stack,
         graphqlErrors: error.response?.errors,
-        stack: error.stack
       });
 
-      // More specific error messages
+      // More specific error handling
+      let errorMessage = "Failed to create artist profile. Please try again.";
+      
       if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
+        errorMessage = error.response.data.message;
       } else if (error.message.includes("Network")) {
-        toast.error("Network error. Please check your connection.");
+        errorMessage = "Network error. Please check your connection.";
       } else if (error.message.includes("Unauthorized")) {
-        toast.error("You must be logged in to create an artist profile.");
-      } else {
-        toast.error("Failed to create artist profile. Please try again.");
+        errorMessage = "You must be logged in to create an artist profile.";
       }
+
+      toast.error(errorMessage);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-spotify-green to-dark-bg text-white py-12 px-4 sm:px-6 lg:px-8 dark">
-      <Card className="w-full max-w-2xl mx-auto bg-[#121212] border-[#282828]">
-        <CardHeader className="border-b border-[#282828] flex flex-col items-start space-y-1">
-          <h2 className="text-2xl font-bold text-[#1DB954]">
-            Hello, Artist {user?.username}!
+    <div className="min-h-screen bg-black text-white py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-3xl mx-auto bg-[#121212] shadow-xl">
+        <CardHeader className="border-b border-[#282828] px-8 py-6 flex flex-col justify-start">
+          <h2 className="text-3xl font-bold text-white">
+            Create Artist Profile
           </h2>
-          <p className="text-[#B3B3B3]">
-            Fill in your details to set up your artist profile on Spotify
-          </p>
+          <p className="text-[#A7A7A7] mt-2">Let's get you set up on Spotify</p>
         </CardHeader>
 
-        <CardBody className="pt-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Artist Name */}
+        <CardBody className="px-8 py-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Artist Name - Updated styling */}
             <div className="space-y-2">
+              <label className="text-sm font-medium text-[#A7A7A7]">
+                Artist name
+              </label>
               <input
-                id="artist-name"
-                placeholder="Enter your artist or band name"
                 {...register("artistName", {
                   required: "Artist name is required",
                 })}
-                className="bg-[#282828] border-[#282828] text-white placeholder-[#535353] focus:ring-[#1DB954] focus:border-[#1DB954] w-full p-3 rounded-md"
-                aria-label="Artist or Band Name"
+                className="w-full bg-[#2A2A2A] border border-[#2A2A2A] text-white rounded-md p-3 
+                          focus:ring-2 focus:ring-[#1DB954] focus:border-transparent
+                          hover:border-white transition-colors"
+                placeholder="Enter your artist or band name"
               />
               {errors.artistName && (
-                <p className="text-red-500 text-sm">
+                <p className="text-[#F15E6C] text-sm mt-1">
                   {errors.artistName.message}
                 </p>
               )}
             </div>
 
-            {/* Genre */}
+            {/* Genre - Updated styling */}
             <div className="space-y-2">
+              <label className="text-sm font-medium text-[#A7A7A7]">
+                Genre
+              </label>
               <select
-                {...register("genre", { required: "Genre is required" })}
-                className="bg-[#282828] border-[#282828] text-white placeholder-[#535353] focus:ring-[#1DB954] focus:border-[#1DB954] w-full p-3 rounded-md"
-                aria-label="Select Genre"
+                {...register("genre")}
+                className="w-full bg-[#2A2A2A] border border-[#2A2A2A] text-white rounded-md p-3
+                          focus:ring-2 focus:ring-[#1DB954] focus:border-transparent
+                          hover:border-white transition-colors"
               >
                 <option value="" disabled selected>
                   Select your genre
@@ -205,38 +224,42 @@ export default function Artist() {
               )}
             </div>
 
-            {/* Profile Picture */}
+            {/* Profile Picture - Updated styling */}
             <div className="space-y-2">
-              <label htmlFor="profile-picture" className="block text-[#B3B3B3]">
-                Upload your profile picture
+              <label className="text-sm font-medium text-[#A7A7A7]">
+                Profile picture
               </label>
-              <input
-                id="profile-picture"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="max-w-[250px] bg-[#282828] border-[#282828] text-white"
-                aria-label="Profile Picture"
-                {...register("profilePicture", {
-                  required: "Profile picture is required",
-                })}
-              />
-              {errors.profilePicture && (
-                <p className="text-red-500 text-sm">
-                  {errors.profilePicture.message}
-                </p>
-              )}
-
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="mt-4">
+              <div className="flex items-center space-x-4">
+                {imagePreview ? (
                   <img
                     src={imagePreview}
                     alt="Profile preview"
-                    className="w-24 h-24 rounded-full object-cover"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-[#1DB954]"
                   />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-[#2A2A2A] flex items-center justify-center">
+                    <IconUpload className="w-8 h-8 text-[#A7A7A7]" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    {...register("profilePicture")}
+                    className="max-w-[250px] bg-[#282828] border-[#282828] text-white"
+                    aria-label="Profile Picture"
+                    {...register("profilePicture", {
+                      required: "Profile picture is required",
+                    })}
+                  />
+                  {errors.profilePicture && (
+                    <p className="text-red-500 text-sm">
+                      {errors.profilePicture.message}
+                    </p>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Country Selection */}
@@ -253,6 +276,10 @@ export default function Artist() {
                 <option value="UK">United Kingdom</option>
                 <option value="CA">Canada</option>
                 <option value="AU">Australia</option>
+                <option value="IND">India</option>
+                <option value="JP">Japan</option>
+                <option value="KR">South Korea</option>
+                <option value="CN">China</option>
                 {/* Add more countries as needed */}
               </select>
               {errors.country && (
@@ -265,7 +292,8 @@ export default function Artist() {
               <input
                 {...register("website", {
                   pattern: {
-                    value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+                    value:
+                      /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
                     message: "Invalid website URL",
                   },
                 })}
@@ -285,7 +313,8 @@ export default function Artist() {
                 <input
                   {...register("facebook", {
                     pattern: {
-                      value: /^(https?:\/\/)?(www\.)?facebook.com\/[A-Za-z0-9-_]+$/,
+                      value:
+                        /^(https?:\/\/)?(www\.)?facebook.com\/[A-Za-z0-9-_]+$/,
                       message: "Invalid Facebook URL",
                     },
                   })}
@@ -294,7 +323,9 @@ export default function Artist() {
                   aria-label="Facebook Profile URL"
                 />
                 {errors.facebook && (
-                  <p className="text-red-500 text-sm">{errors.facebook.message}</p>
+                  <p className="text-red-500 text-sm">
+                    {errors.facebook.message}
+                  </p>
                 )}
               </div>
 
@@ -303,7 +334,8 @@ export default function Artist() {
                 <input
                   {...register("twitter", {
                     pattern: {
-                      value: /^(https?:\/\/)?(www\.)?twitter.com\/[A-Za-z0-9-_]+$/,
+                      value:
+                        /^(https?:\/\/)?(www\.)?twitter.com\/[A-Za-z0-9-_]+$/,
                       message: "Invalid Twitter URL",
                     },
                   })}
@@ -312,7 +344,9 @@ export default function Artist() {
                   aria-label="Twitter Profile URL"
                 />
                 {errors.twitter && (
-                  <p className="text-red-500 text-sm">{errors.twitter.message}</p>
+                  <p className="text-red-500 text-sm">
+                    {errors.twitter.message}
+                  </p>
                 )}
               </div>
 
@@ -321,7 +355,8 @@ export default function Artist() {
                 <input
                   {...register("instagram", {
                     pattern: {
-                      value: /^(https?:\/\/)?(www\.)?instagram.com\/[A-Za-z0-9-_]+$/,
+                      value:
+                        /^(https?:\/\/)?(www\.)?instagram.com\/[A-Za-z0-9-_]+$/,
                       message: "Invalid Instagram URL",
                     },
                   })}
@@ -330,7 +365,9 @@ export default function Artist() {
                   aria-label="Instagram Profile URL"
                 />
                 {errors.instagram && (
-                  <p className="text-red-500 text-sm">{errors.instagram.message}</p>
+                  <p className="text-red-500 text-sm">
+                    {errors.instagram.message}
+                  </p>
                 )}
               </div>
             </div>

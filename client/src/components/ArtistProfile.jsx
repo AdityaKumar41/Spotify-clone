@@ -14,6 +14,7 @@ import axios from 'axios'
 import { PlayerContext } from '../context/PlayerContext'
 import { Select } from "@nextui-org/select"
 import { SelectItem } from "@nextui-org/select"
+import Navbar from './Navbar'
 
 export default function ArtistPage() {
   const { data: user, isLoading: isUserLoading } = useMe();
@@ -59,7 +60,7 @@ export default function ArtistPage() {
     try {
       // 1. Get Signed URL for image upload
       const { getSignedURL: imageSignedURL } = await graphqlClient.request(GetSignedURL, {
-        fileName: data.coverImage[0].name,
+        fileName: `images/${data.coverImage[0].name}`,
         fileType: data.coverImage[0].type,
         type: 'coverImage'
       });
@@ -73,7 +74,7 @@ export default function ArtistPage() {
 
       // 3. Upload audio file
       const { getSignedURL: audioSignedURL } = await graphqlClient.request(GetSignedURL, {
-        fileName: data.audioFile[0].name,
+        fileName: `music/${data.audioFile[0].name}`,
         fileType: data.audioFile[0].type,
         type: 'audioFile'
       });
@@ -136,13 +137,16 @@ export default function ArtistPage() {
 
   const handleDeleteSong = async (id) => {
     const deleted = await deleteSong(id);
-    console.log('Deleted: ', deleted);
-    if (deleted) {
+    
       toast.success("Song deleted successfully!");
-    }
+    
   };
   
   return (
+    <>
+     <div className="relative w-full">
+       <Navbar />
+       </div>
     <div className="max-w-2xl mx-auto p-6 bg-[#121212] text-white rounded-lg">
       <div className="bg-[#181818] p-6 rounded-lg shadow-xl">
         <div className="flex items-center space-x-4">
@@ -278,5 +282,6 @@ export default function ArtistPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

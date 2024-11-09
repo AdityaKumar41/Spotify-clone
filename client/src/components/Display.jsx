@@ -28,10 +28,7 @@ const Display = () => {
     if (isAlbum && albumData) {
       // For album page, set the background based on the album's bgColor
       displayref.current.style.background = `linear-gradient(${bgColor}, #121212)`;
-    } else if (isProfile) {
-      // For profile page, you can set a different background or color
-      displayref.current.style.background = `linear-gradient(#4CAF50, #121212)`; // Customize this for profile page
-    } else {
+    }else {
       // Default background color for other pages
       displayref.current.style.background = `#121212`;
     }
@@ -40,17 +37,20 @@ const Display = () => {
   return (
     <div
       ref={displayref}
-      className="w-full m-2 px-6 pt-4 rounded bg-[#121212] text-white overflow-auto lg:w-3/4 lg:ml-0"
+      className="w-full px-0 pt-0 md:px-6 md:pt-4  rounded bg-[#121212] text-white overflow-auto lg:w-3/4 lg:ml-0"
     >
       <Routes>
-        <Route path="/artist" element={user?.me?.artist ?<ArtistPage /> : <Artist />} />
+        <Route
+          path="/artist"
+          element={user?.me?.artist ? <ArtistPage /> : <Artist />}
+        />
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<DisplayHome />} />
         <Route path="/artists/:id" element={<DisplayAlbum />} />
         <Route path="/genres/:id" element={<DisplayGenre />} />
         <Route path="/search" element={<Search />} />
         {/* not found */}
-        <Route path="*" element={<NotFound/>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

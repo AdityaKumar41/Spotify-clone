@@ -100,6 +100,10 @@ query GetGenre($getGenreId: ID!) {
       fileUrl
       releaseDate
       title
+      artist {
+        id
+        name
+      }
     }
   }
 }

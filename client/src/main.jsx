@@ -19,7 +19,7 @@ createRoot(document.getElementById("root")).render(
           <PlayerContextprovider>
             <App />
             <Toaster />
-            <ReactQueryDevtools />
+            {/* <ReactQueryDevtools /> */}
           </PlayerContextprovider>
         </QueryClientProvider>
       </GoogleOAuthProvider>

@@ -11,7 +11,11 @@ async function serverInit() {
   const app = express();
   app.use(
     cors({
-      origin: ["http://localhost:5173", "http://192.168.1.5:5173"],
+      origin: [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://8vxrhkz9-3000.inc1.devtunnels.ms",
+      ],
       credentials: true,
     })
   );

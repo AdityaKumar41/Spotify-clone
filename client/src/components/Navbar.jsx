@@ -2,13 +2,14 @@ import React from "react";
 import { assets } from "../assets/assets";
 import { Link, useNavigate } from "react-router-dom";
 import { useMe } from "../hooks/useUser";
+import { IconSearch } from "@tabler/icons-react";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { data: user } = useMe();
   return (
     <>
-      <div className="w-full flex justify-between items-center font-semibold">
+      <div className="w-full flex justify-between items-center font-semibold py-3">
         <div className="flex items-center gap-2">
           <img
             onClick={() => navigate(-1)}
@@ -24,25 +25,28 @@ const Navbar = () => {
           />
         </div>
         <div className="flex items-center gap-4">
+          {user?.me?.artist && (
+            <button
+              onClick={() => navigate('/artist')}
+              className="bg-black text-white px-4 py-1 rounded-2xl"
+            >
+              Upload
+            </button>
+          )}
+          <IconSearch
+            onClick={() => navigate("/search")}
+            className={`w-5 h-5 cursor-pointer md:hidden`}
+          />
           <div className="text-black w-10 h-10 rounded-full flex items-center justify-center">
-            <Link to={`/profile`}>
+            <Link to={user?.me?.isArtist ? `/artist/profile` : `/profile`}>
               <img
-                className="rounded-full"
-                src={user?.me?.profileImage}
-                alt="pr_image"
+                className={`rounded-full ${user?.me?.artist ? 'border-2 border-purple-500' : ''}`}
+                src={user?.me?.artist?.image || user?.me?.profileImage}
+                alt={user?.me?.artist ? 'artist_profile' : 'user_profile'}
               />
             </Link>
           </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2 mt-4">
-        <p className="bg-white text-black px-4 py-1 rounded-2xl cursor-pointer">
-          All
-        </p>
-        <p className=" bg-black px-4 py-1 rounded-2xl cursor-pointer">Music</p>
-        <p className="bg-black px-4 py-1 rounded-2xl cursor-pointer">
-          Podcasts
-        </p>
       </div>
     </>
   );
