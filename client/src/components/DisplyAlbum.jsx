@@ -5,50 +5,113 @@ import { albumsData, assets, songsData } from "../assets/assets";
 import { PlayerContext } from "../context/PlayerContext";
 import { useGetSongByArtist } from "../hooks/useSong";
 import SpacerArtist from "./SpacerArtist";
+import {
+  IconClock,
+  IconPlayerPlayFilled,
+  IconHeart,
+  IconMusic,
+  IconPlaylist,
+  IconPlayerPauseFilled,
+} from "@tabler/icons-react";
 
 const calculateTotalDuration = (songs) => {
   try {
-    const totalMinutes = songs.reduce((acc, song) => {
-      if (!song.duration) return acc;
-
-      // Handle if duration is already a number (in seconds)
-      if (typeof song.duration === 'number') {
-        return acc + (song.duration / 60);
-      }
-
-      // Handle string format "3:45" or "03:45"
-      if (typeof song.duration === 'string') {
-        const parts = song.duration.split(':');
-        if (parts.length === 2) {
-          const [minutes, seconds] = parts.map(Number);
-          return acc + minutes + seconds / 60;
-        }
-      }
-
-      return acc;
+    const totalSeconds = songs.reduce((acc, song) => {
+      return acc + (song.duration || 0);
     }, 0);
 
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.round(totalMinutes % 60);
-
-    return { hours, minutes };
+    const minutes = Math.floor(totalSeconds / 60);
+    return minutes;
   } catch (error) {
     console.error('Error calculating duration:', error);
-    return { hours: 0, minutes: 0 };
+    return 0;
+  }
+};
+
+const formatDate = (timestamp) => {
+  try {
+    const date = new Date(parseInt(timestamp));
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    return 'N/A';
   }
 };
 
 const DisplayAlbum = () => {
   const { id } = useParams();
   const { data: albumData } = useGetSongByArtist(id);
-  const { playWithId } = useContext(PlayerContext);
+  const { 
+    track, 
+    playStatus, 
+    setTrack,
+    audioRef,
+    play,
+    pause
+  } = useContext(PlayerContext);
+
+  const handlePlayAll = async () => {
+    if (albumData?.length > 0) {
+      const firstSong = albumData[0];
+      try {
+        setTrack({
+          ...firstSong,
+          name: firstSong.artist?.name || "Unknown Artist"
+        });
+        audioRef.current.src = firstSong.fileUrl;
+        await audioRef.current.load();
+        await audioRef.current.play();
+        play();
+      } catch (error) {
+        console.error("Error in handlePlayAll:", error);
+      }
+    }
+  };
+
+  const handleSongPlay = async (song) => {
+    if (!song.fileUrl) return;
+
+    try {
+      if (track?.fileUrl === song.fileUrl && playStatus) {
+        pause();
+        audioRef.current.pause();
+      } else {
+        setTrack({
+          ...song,
+          name: song.artist?.name || "Unknown Artist"
+        });
+        audioRef.current.src = song.fileUrl;
+        await audioRef.current.load();
+        await audioRef.current.play();
+        play();
+      }
+    } catch (error) {
+      console.error("Error in handleSongPlay:", error);
+    }
+  };
+
+  const isPlaying = (song) => {
+    return track?.fileUrl === song.fileUrl && playStatus;
+  };
+
+  // Create dynamic gradient styles like DisplayGenre
+  const headerStyle = {
+    background: `linear-gradient(to bottom, #1E3264dd 0%, rgba(0,0,0,1) 100%)`,
+    minHeight: "30vh",
+  };
+
+  const mainGradient = {
+    background: `linear-gradient(to bottom, #1E326422 0%, rgba(0,0,0,1) 100%)`,
+  };
 
   if (!albumData || !Array.isArray(albumData) || albumData.length === 0) {
     return (
-      <>
-        <Navbar />
-        <SpacerArtist/>
-      </>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
+      </div>
     );
   }
 
@@ -56,61 +119,128 @@ const DisplayAlbum = () => {
 
   return (
     <>
-      <Navbar />
-      <div className="mt-10 flex gap-8 flex-col md:flex-row md:items-end">
-        <img
-          className="w-44 h-44 object-cover rounded"
-          src={artistData?.image || '/default-artist-image.jpg'}
-          alt={artistData?.name || 'Artist'}
-        />
-        <div className="flex flex-col">
-          <p>Playlist</p>
-          <h2 className="text-5xl font-bold mb-4 md:text-7xl">
-            {artistData?.name || 'Unknown Artist'}
-          </h2>
-          <h4>{artistData?.bio || 'No biography available'}</h4>
-          <p className="mt-1">
-            <img
-              className="inline-block w-5 mr-1"
-              src={assets.spotify_logo}
-              alt="Spotify Logo"
-            />
-            <b>Spotify</b> • <b>{albumData.length} songs,</b>
-            {(() => {
-              const { hours, minutes } = calculateTotalDuration(albumData);
-              return `about ${hours ? `${hours} hr` : ''} ${minutes} min`;
-            })()}
-          </p>
+      <div className="min-h-screen text-white" style={mainGradient}>
+        <Navbar />
+        {/* Updated Header Section - Better Mobile Spacing */}
+        <div className="p-4 md:p-6" style={headerStyle}>
+          <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 h-full pt-16 md:pt-20">
+            <div className="aspect-square w-[140px] md:w-[232px] h-[140px] md:h-[232px] shadow-lg rounded-lg overflow-hidden mx-auto md:mx-0">
+              {artistData?.image ? (
+                <img
+                  src={artistData.image}
+                  alt={artistData.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-neutral-800">
+                  <IconMusic className="w-16 md:w-24 h-16 md:h-24 text-white/75" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <p className="text-sm font-medium">Artist</p>
+              <h1 className="text-3xl md:text-8xl font-bold my-2 md:my-4 truncate">
+                {artistData?.name || 'Unknown Artist'}
+              </h1>
+              <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
+                <span className="font-medium">{albumData.length} songs</span>
+                <span>•</span>
+                <span>{calculateTotalDuration(albumData)} min</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Updated Content Section - Mobile Optimized */}
+        <div className="px-4 md:px-6 -mt-8 relative z-10">
+          {albumData.length > 0 && (
+            <div className="flex items-center gap-6 mb-6">
+              <button
+                onClick={handlePlayAll}
+                className="w-14 h-14 flex items-center justify-center rounded-full hover:scale-105 transition-all group"
+                style={{ backgroundColor: "#1E3264" }}
+              >
+                <IconPlayerPlayFilled className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
+              </button>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="text-neutral-400 text-sm border-b border-neutral-700">
+                  <th className="w-10 md:w-14 text-center pb-2">#</th>
+                  <th className="text-left pb-2">Title</th>
+                  <th className="hidden md:table-cell text-left pb-2">Album</th>
+                  <th className="hidden md:table-cell text-left pb-2">Date added</th>
+                  <th className="w-14 pb-2">
+                    <IconClock className="w-5 h-5" />
+                  </th>
+                  <th className="w-14 pb-2"></th> {/* For play button */}
+                </tr>
+              </thead>
+              <tbody>
+                {albumData.map((song, index) => (
+                  <tr
+                    key={song.fileUrl}
+                    className={`group hover:bg-white/10 rounded-md text-sm text-neutral-400 
+                      ${isPlaying(song) ? "bg-white/20" : ""}`}
+                  >
+                    <td className="px-4 py-2 text-center">{index + 1}</td>
+                    <td className="py-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
+                          {song.coverImage ? (
+                            <img
+                              src={song.coverImage}
+                              alt={song.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IconMusic className="w-6 h-6 text-neutral-500" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className={`font-medium truncate
+                            ${isPlaying(song) ? "text-green-500" : "text-white"}`}>
+                            {song.title}
+                          </div>
+                          <div className="text-sm text-neutral-400 truncate">
+                            {song.artist?.name || "Unknown Artist"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell py-2">{song.album?.title || artistData?.name}</td>
+                    <td className="hidden md:table-cell py-2">{formatDate(song.releaseDate)}</td>
+                    <td className="py-2 text-right pr-4">
+                      {song.duration ? 
+                        `${Math.floor(song.duration / 60)}:${(song.duration % 60).toString().padStart(2, '0')}` 
+                        : '--:--'}
+                    </td>
+                    <td className="py-2 w-14">
+                      <button
+                        onClick={() => handleSongPlay(song)}
+                        className={`p-2 rounded-full hover:bg-white/10 transition-all
+                          ${!song.fileUrl ? "cursor-not-allowed opacity-50" : ""}`}
+                        disabled={!song.fileUrl}
+                      >
+                        {isPlaying(song) ? (
+                          <IconPlayerPauseFilled className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <IconPlayerPlayFilled className="w-5 h-5 text-white opacity-0 group-hover:opacity-100" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <div className="grid grid-cols-3 sm:grid-cols-4 mt-10 mb-4 pl-2 text-[#a7a7a7]">
-        <p>
-          <b className="mr-4">#</b>Title
-        </p>
-        <p>Album</p>
-        <p className="hidden sm:block">Date Added</p>
-        <img className="m-auto w-4" src={assets.clock_icon} alt="Clock Icon" />
-      </div>
-      <hr />
-      {Array.isArray(albumData) ? (
-        albumData.map((item, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-2 items-center text-[#a7a7a7] hover:bg-[#ffffff2b] cursor-pointer"
-          >
-            <p onClick={() => playWithId(item.id)} className="text-white">
-              <b className="mr-4 text-[#a7a7a7]">{index + 1}</b>
-              <img className="inline w-10 mr-5" src={item.coverImage} alt="" />
-              {item.title}
-            </p>
-            <p className="text-[15px] ">{item.album?.title || albumData.title}</p>
-            <p className="text-[15px] hidden sm:block cursor-pointer">
-              5 days ago
-            </p>
-            <p className="text-[15px] text-center">{item.duration}</p>
-          </div>
-        ))
-      ) : null}
     </>
   );
 };

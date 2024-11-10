@@ -42,8 +42,8 @@ export default function Profile() {
   return (
     <div className="bg-black min-h-screen text-white">
       
-      {/* Sticky Header - Shows on Scroll */}
-      <div className={` bg-[#121212] z-20 py-4 px-4 md:px-[32px] transition-all duration-300`}>
+      {/* Sticky Header - Enhanced background opacity */}
+      <div className={`bg-black/95 backdrop-blur-md z-20 py-4 px-4 md:px-[32px] transition-all duration-300`}>
         <div className="flex items-center gap-4">
           <div className="cursor-pointer hover:bg-[#282828] rounded-full p-2" onClick={() => navigate(-1)}>
             <IconArrowLeft className="w-[20px] h-[20px] text-[#a7a7a7]" />
@@ -75,18 +75,18 @@ export default function Profile() {
 
       {/* Main Content */}
       <div className="relative">
-        {/* Background Gradient */}
-        <div className="absolute top-0 left-0 w-full h-[340px] bg-gradient-to-b from-[#454545] to-[#121212]" />
+        {/* Enhanced Background Gradient */}
+        <div className="absolute top-0 left-0 w-full h-[340px] bg-gradient-to-b from-blue-600/30 via-purple-500/20 to-[#121212] opacity-90" />
         
-        {/* Profile Info */}
+        {/* Profile Info - Added subtle text shadow */}
         <div className="relative pt-[96px] px-[32px]">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-            {/* Profile/Artist Image */}
+            {/* Enhanced Profile/Artist Image with glow effect */}
             {isArtist ? (
               <img
                 src={user?.me?.artist?.image || user?.me?.profileImage}
                 alt="Artist"
-                className="w-[192px] h-[192px] md:w-[232px] md:h-[232px] shadow-2xl rounded-full object-cover"
+                className="w-[192px] h-[192px] md:w-[232px] md:h-[232px] shadow-2xl rounded-full object-cover ring-4 ring-white/10 hover:ring-white/20 transition-all duration-300"
               />
             ) : (
               user?.me?.profileImage ? (
@@ -102,11 +102,11 @@ export default function Profile() {
               )
             )}
             
-            {/* Profile Text */}
+            {/* Enhanced Profile Text with text shadow */}
             <div className="flex flex-col text-center md:text-left">
-              <span className="text-sm font-bold">{isArtist ? 'Artist' : 'Profile'}</span>
-              <h1 className="text-[2rem] md:text-[3rem] font-bold mt-2 mb-4">
-                {user?.me?.artist.name || 'User Name'}
+              <span className="text-sm font-bold text-white/80">{isArtist ? 'Artist' : 'Profile'}</span>
+              <h1 className="text-[2rem] md:text-[3rem] font-bold mt-2 mb-4 text-shadow-lg">
+                {isArtist ? user?.me?.artist?.name : user?.me?.username}
               </h1>
               <div className="flex items-center gap-2 text-sm text-[#a7a7a7]">
                 {isArtist ? (
@@ -118,10 +118,10 @@ export default function Profile() {
                 ) : (
                   <>
                     <span>{user?.me?.playlistCount || 0} Public Playlists</span>
-                    <span>•</span>
+                    {/* <span>•</span>
                     <span>{user?.me?.followersCount || 0} followers</span>
                     <span>•</span>
-                    <span>{user?.me?.followingCount || 0} following</span>
+                    <span>{user?.me?.followingCount || 0} following</span> */}
                   </>
                 )}
               </div>
@@ -129,16 +129,16 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Action Buttons - Updated for artist */}
+        {/* Enhanced Action Buttons with better hover effects */}
         <div className="px-[32px] py-6 flex flex-wrap gap-4">
           <Button
-            className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold rounded-full px-8 py-3 text-[14px]"
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold rounded-full px-8 py-3 text-[14px] transition-all duration-300"
           >
             Edit profile
           </Button>
           {isArtist ? (
             <Button
-              className="bg-transparent hover:bg-[#ffffff1a] border border-[#ffffff4d] text-white font-bold rounded-full px-8 py-3 text-[14px]"
+              className="bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/10 hover:border-white/20 text-white font-bold rounded-full px-8 py-3 text-[14px] transition-all duration-300"
             >
               <Link to="/artist">Upload Songs</Link>
             </Button>
@@ -157,16 +157,17 @@ export default function Profile() {
           </Button>
         </div>
 
-        {/* Content Sections */}
-        <div className="bg-[#121212] relative">
-          {/* Playlists Grid */}
+        {/* Enhanced Content Sections */}
+        <div className="bg-gradient-to-b from-[#121212] to-black relative">
+          {/* Enhanced Playlists Grid */}
           <div className="px-[32px] py-4">
-            <h2 className="text-2xl font-bold mb-4">Public Playlists</h2>
+            <h2 className="text-2xl font-bold mb-4 text-shadow-sm">Public Playlists</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              {/* Enhanced playlist cards */}
               {[1, 2, 3, 4, 5].map((playlist) => (
                 <div 
                   key={playlist} 
-                  className="bg-[#181818] hover:bg-[#282828] transition-all duration-300 p-4 rounded-lg group cursor-pointer"
+                  className="bg-[#181818]/90 hover:bg-[#282828] backdrop-blur-sm transition-all duration-300 p-4 rounded-lg group cursor-pointer hover:shadow-xl hover:shadow-black/40"
                 >
                   <div className="relative mb-4">
                     <div className="aspect-square bg-[#282828] rounded-md flex items-center justify-center">
@@ -185,14 +186,14 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Top Songs */}
+          {/* Enhanced Top Songs */}
           <div className="px-[32px] py-4">
-            <h2 className="text-2xl font-bold mb-4">Top Songs</h2>
+            <h2 className="text-2xl font-bold mb-4 text-shadow-sm">Top Songs</h2>
             <div className="flex flex-col">
               {songsData.slice(0, 5).map((song, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-[16px,4fr,2fr] md:grid-cols-[16px,4fr,2fr,1fr] items-center p-2 rounded-md hover:bg-[#ffffff1a] group"
+                  className="grid grid-cols-[16px,4fr,2fr] md:grid-cols-[16px,4fr,2fr,1fr] items-center p-2 rounded-md hover:bg-white/10 backdrop-blur-sm transition-all duration-300 group"
                 >
                   <span className="text-[#a7a7a7] group-hover:hidden">{index + 1}</span>
                   <button className="hidden group-hover:block text-white">

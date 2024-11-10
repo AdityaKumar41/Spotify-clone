@@ -47,6 +47,7 @@ const GET_SONG_BY_ARTIST_QUERY = gql`
       duration
       coverImage
       fileUrl
+      releaseDate
       artist {
         id
         name

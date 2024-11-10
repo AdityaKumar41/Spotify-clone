@@ -18,7 +18,7 @@ const DisplayHome = () => {
 
   console.log(artistsWithSongs)
   return (
-    <>
+    <div className='p-4 md:p-0'>
     <Navbar />
     <div className='mb-4'>
       <h1 className='my-5 font-bold text-2xl cursor-pointer'>Featured Charts </h1>
@@ -29,10 +29,10 @@ const DisplayHome = () => {
     <div className='mb-4'>
       <h1 className='my-5 font-bold text-2xl cursor-pointer'>Today's biggest hits</h1>
       <div className='flex overflow-auto'>
-        {songs.map((item,index)=>(<Songitem key={index} name={item.title} author={item.artist.name} id={item.id} image={item.coverImage}/>))}
+        {songs?.map((item,index)=>(<Songitem key={index} name={item.title} author={item.artist.name} id={item.id} image={item.coverImage}/>))}
       </div>
     </div>
-    </>
+    </div>
   )
 }
 export default DisplayHome

@@ -9,7 +9,7 @@ const Navbar = () => {
   const { data: user } = useMe();
   return (
     <>
-      <div className="w-full flex justify-between items-center font-semibold py-3">
+      <div className="w-full flex justify-between items-center font-semibold py-3 px-4 md:px-0 ">
         <div className="flex items-center gap-2">
           <img
             onClick={() => navigate(-1)}

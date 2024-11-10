@@ -9,6 +9,7 @@ import { useContext, useState } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 import Navbar from "./Navbar";
 import { useGetArtists } from "../hooks/useArtist";
+import { Skeleton } from "@nextui-org/skeleton";
 
 export default function Search() {
   const { data: user } = useMe();
@@ -110,7 +111,21 @@ export default function Search() {
             <h1 className="text-2xl font-bold mb-6">Browse Genres</h1>
 
             {genresLoading ? (
-              <div>Loading genres...</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[1, 2, 3,4].map((index) => (
+                  <div key={index} className="relative overflow-hidden rounded-lg h-48 bg-neutral-800">
+                    <Skeleton 
+                      className="w-full h-full" 
+                      disableAnimation={false}
+                      isLoaded={false}
+                    >
+                      <div className="p-4">
+                        <div className="h-8 w-2/3 bg-neutral-700"></div>
+                      </div>
+                    </Skeleton>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {genres?.map((genre, index) => (
@@ -139,7 +154,29 @@ export default function Search() {
             <h1 className="text-2xl font-bold mb-6 mt-12">Popular Artists</h1>
 
             {artistsLoading ? (
-              <div>Loading artists...</div>
+              <div className="space-y-4">
+                {[1, 2, 3].map((index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center p-4 bg-neutral-800 rounded-lg"
+                  >
+                    <div className="flex items-center flex-1 gap-4">
+                      <Skeleton className="rounded-full w-[60px] h-[60px]">
+                        <div className="w-[60px] h-[60px] rounded-full"></div>
+                      </Skeleton>
+                      
+                      <div className="space-y-2">
+                        <Skeleton className="w-32 rounded">
+                          <div className="h-6"></div>
+                        </Skeleton>
+                        <Skeleton className="w-16 rounded">
+                          <div className="h-4"></div>
+                        </Skeleton>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="space-y-4">
                 {artists?.map((artist) => (

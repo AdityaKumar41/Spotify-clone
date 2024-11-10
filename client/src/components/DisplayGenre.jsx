@@ -70,14 +70,16 @@ export default function DisplayGenre() {
       
       if (firstPlayableSong?.fileUrl) {
         try {
-          // Set track with artist from song's artist object
+          // Set track with all necessary properties
           setTrack({
             ...firstPlayableSong,
-            id: firstPlayableSong.fileUrl,
-            name: firstPlayableSong.artist?.name || "Unknown Artist"
+            id: firstPlayableSong._id, // Use the actual _id instead of fileUrl
+            artist: firstPlayableSong.artist?.name || "Unknown Artist"
           });
           
+          // Wait for audio to load before playing
           audioRef.current.src = firstPlayableSong.fileUrl;
+          await audioRef.current.load();
           await audioRef.current.play();
           play();
         } catch (error) {
@@ -100,14 +102,16 @@ export default function DisplayGenre() {
         pause();
         audioRef.current.pause();
       } else {
-        // Set track with artist from song's artist object
+        // Set track with all necessary properties
         setTrack({
           ...song,
-          id: song.fileUrl,
-          name: song.artist?.name || "Unknown Artist"
+          id: song._id, // Use the actual _id instead of fileUrl
+          artist: song.artist?.name || "Unknown Artist"
         });
         
+        // Wait for audio to load before playing
         audioRef.current.src = song.fileUrl;
+        await audioRef.current.load();
         await audioRef.current.play();
         play();
       }
@@ -124,25 +128,12 @@ export default function DisplayGenre() {
   // Create dynamic gradient styles
   const headerStyle = {
     background: `linear-gradient(to bottom, ${genreColor}dd 0%, rgba(0,0,0,1) 100%)`,
-    minHeight: "40vh",
+    minHeight: "30vh",
   };
 
   const mainGradient = {
     background: `linear-gradient(to bottom, ${genreColor}22 0%, rgba(0,0,0,1) 100%)`,
   };
-
-  useEffect(() => {
-    if (genre?.songs?.length > 0) {
-      const firstPlayableSong = genre.songs.find(
-        (song) => song.id && song.fileUrl
-      );
-      if (firstPlayableSong) {
-        setTrack(firstPlayableSong);
-        audioRef.current.src = firstPlayableSong.fileUrl;
-
-      }
-    }
-  }, [genre, setTrack]);
 
   if (isLoading) {
     return (
@@ -158,10 +149,10 @@ export default function DisplayGenre() {
     <>
       <div className="min-h-screen text-white" style={mainGradient}>
         <Navbar />
-        {/* Enhanced Header Section with Dynamic Color */}
-        <div className="p-6" style={headerStyle}>
-          <div className="flex items-end gap-6 h-full pt-20">
-            <div className="aspect-square w-[232px] h-[232px] shadow-lg rounded-lg overflow-hidden">
+        {/* Updated Header Section */}
+        <div className="p-4 md:p-6" style={headerStyle}>
+          <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 h-full pt-16 md:pt-20">
+            <div className="aspect-square w-[160px] md:w-[232px] h-[160px] md:h-[232px] shadow-lg rounded-lg overflow-hidden mx-auto md:mx-0">
               {getPlaylistImages().length > 0 ? (
                 <div className="w-full h-full">
                   {getPlaylistImages().length === 1 ? (
@@ -193,12 +184,12 @@ export default function DisplayGenre() {
                 </div>
               )}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 text-center md:text-left">
               <p className="text-sm font-medium">Genre</p>
-              <h1 className="text-8xl font-bold my-4 truncate">
+              <h1 className="text-4xl md:text-8xl font-bold my-2 md:my-4 truncate">
                 {genre?.name}
               </h1>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
                 <span className="font-medium">
                   {genre?.songs?.length || 0} songs
                 </span>
@@ -207,8 +198,8 @@ export default function DisplayGenre() {
           </div>
         </div>
 
-        {/* Content Section with Fade Effect */}
-        <div className="px-6 -mt-8 relative z-10">
+        {/* Updated Content Section */}
+        <div className="px-4 md:px-6 -mt-8 relative z-10">
           {/* Play Button with Dynamic Color */}
           {genre?.songs?.length > 0 && (
             <div className="flex items-center gap-6 mb-6">
@@ -229,89 +220,87 @@ export default function DisplayGenre() {
               <p>This genre doesn't have any songs yet.</p>
             </div>
           ) : (
-            <table className="w-full table-auto">
-              <thead>
-                <tr className="text-neutral-400 text-sm border-b border-neutral-700">
-                  <th className="w-14 text-center pb-2">#</th>
-                  <th className="text-left pb-2">Title</th>
-                  <th className="text-left pb-2">Album</th>
-                  <th className="text-left pb-2">Date added</th>
-                  <th className="w-14 pb-2">
-                    <IconClock className="w-5 h-5" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {genre.songs.map((song, index) => (
-                  <tr
-                    key={song.fileUrl} // Use fileUrl as key
-                    className={`group hover:bg-white/10 rounded-md text-sm text-neutral-400 
-                                        ${isPlaying(song) ? "bg-white/20" : ""}`}
-                  >
-                    <td className="w-14 text-center py-2">
-                      <span className={`group-hover:hidden ${isPlaying(song) ? "hidden" : ""}`}>
-                        {index + 1}
-                      </span>
-                      <button
-                        onClick={() => handleSongPlay(song)}
-                        className={`${isPlaying(song) || "group-hover:block"} 
-                          ${isPlaying(song) ? "block" : "hidden"} mx-auto
-                          ${!song.fileUrl ? "cursor-not-allowed opacity-50" : ""}`}
-                        disabled={!song.fileUrl}
-                      >
-                        {isPlaying(song) ? (
-                          <IconPlayerPauseFilled className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <IconPlayerPlayFilled className="w-4 h-4 text-white" />
-                        )}
-                      </button>
-                    </td>
-                    <td className="py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800">
-                          {song.coverImage ? (
-                            <img
-                              src={song.coverImage}
-                              alt={song.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <IconMusic className="w-6 h-6 text-neutral-500" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div
-                            className={`font-medium hover:underline cursor-pointer
-                                                    ${
-                                                      isPlaying(song)
-                                                        ? `text-[${genreColor}]`
-                                                        : "text-white"
-                                                    }`}
-                          >
-                            {song.title}
-                          </div>
-                          <div className="text-sm text-neutral-400">
-                            {song.artist?.name || "Unknown Artist"}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2">-</td>
-                    <td className="py-2">{formatDate(song.releaseDate)}</td>
-                    <td className="py-2">
-                      <div className="flex items-center gap-4 justify-end">
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <IconHeart className="w-4 h-4 hover:text-white transition-colors" />
-                        </button>
-                        <span>{formatDuration(song.duration)}</span>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="text-neutral-400 text-sm border-b border-neutral-700">
+                    <th className="w-10 md:w-14 text-center pb-2">#</th>
+                    <th className="text-left pb-2">Title</th>
+                    <th className="hidden md:table-cell text-left pb-2">Album</th>
+                    <th className="hidden md:table-cell text-left pb-2">Date added</th>
+                    <th className="w-14 pb-2">
+                      <IconClock className="w-5 h-5" />
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {genre.songs.map((song, index) => (
+                    <tr
+                      key={song.fileUrl}
+                      className={`group hover:bg-white/10 rounded-md text-sm text-neutral-400 
+                        ${isPlaying(song) ? "bg-white/20" : ""}`}
+                    >
+                      <td className="w-10 md:w-14 text-center py-2">
+                        <span className={`group-hover:hidden ${isPlaying(song) ? "hidden" : ""}`}>
+                          {index + 1}
+                        </span>
+                        <button
+                          onClick={() => handleSongPlay(song)}
+                          className={`${isPlaying(song) || "group-hover:block"} 
+                            ${isPlaying(song) ? "block" : "hidden"} mx-auto
+                            ${!song.fileUrl ? "cursor-not-allowed opacity-50" : ""}`}
+                          disabled={!song.fileUrl}
+                        >
+                          {isPlaying(song) ? (
+                            <IconPlayerPauseFilled className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <IconPlayerPlayFilled className="w-4 h-4 text-white" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="py-2 min-w-[200px]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
+                            {song.coverImage ? (
+                              <img
+                                src={song.coverImage}
+                                alt={song.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <IconMusic className="w-6 h-6 text-neutral-500" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div
+                              className={`font-medium hover:underline cursor-pointer truncate
+                                ${isPlaying(song) ? `text-[${genreColor}]` : "text-white"}`}
+                            >
+                              {song.title}
+                            </div>
+                            <div className="text-sm text-neutral-400 truncate">
+                              {song.artist?.name || "Unknown Artist"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell py-2">-</td>
+                      <td className="hidden md:table-cell py-2">{formatDate(song.releaseDate)}</td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-4 justify-end">
+                          <button className="opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
+                            <IconHeart className="w-4 h-4 hover:text-white transition-colors" />
+                          </button>
+                          <span>{formatDuration(song.duration)}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
