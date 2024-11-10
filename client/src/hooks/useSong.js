@@ -48,11 +48,18 @@ const GET_SONG_BY_ARTIST_QUERY = gql`
       coverImage
       fileUrl
       releaseDate
+      genres {
+          id
+          name
+        }
       artist {
         id
         name
         image
         bio
+        facebook
+        instagram
+        twitter
       }
     }
   }

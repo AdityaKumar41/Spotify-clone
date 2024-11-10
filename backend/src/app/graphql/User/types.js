@@ -56,7 +56,7 @@ exports.type = `#graphql
     instagram: String
     website: String
     country: String
-    genres: [String!]
+    genres: [Genre!]
     # New fields
     headerImage: String
     monthlyListeners: Int

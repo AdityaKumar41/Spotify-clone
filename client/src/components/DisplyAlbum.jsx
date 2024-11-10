@@ -12,7 +12,34 @@ import {
   IconMusic,
   IconPlaylist,
   IconPlayerPauseFilled,
+  IconBrandFacebook,
+  IconBrandTwitter,
+  IconBrandInstagram,
 } from "@tabler/icons-react";
+
+const getArtistGradient = (artistId) => {
+  // Simple array of gradient pairs
+  const gradientPairs = [
+    ['#1DB954', '#115E2C'], // Spotify green
+    ['#E91E63', '#880E4F'], // Pink
+    ['#2196F3', '#0D47A1'], // Blue
+    ['#FF5722', '#BF360C'], // Deep Orange
+    ['#9C27B0', '#4A148C'], // Purple
+    ['#FF9800', '#E65100'], // Orange
+    ['#00BCD4', '#006064'], // Cyan
+    ['#F44336', '#B71C1C'], // Red
+    ['#4CAF50', '#1B5E20'], // Green
+    ['#3F51B5', '#1A237E'], // Indigo
+  ];
+
+  const index = ((parseInt(artistId) || 0) - 1) % gradientPairs.length;
+  const [startColor, endColor] = index >= 0 ? gradientPairs[index] : gradientPairs[0];
+
+  return {
+    header: `linear-gradient(180deg, ${startColor} 0%, rgba(0,0,0,1) 100%)`,
+    solid: startColor // For play button
+  };
+};
 
 const calculateTotalDuration = (songs) => {
   try {
@@ -97,16 +124,7 @@ const DisplayAlbum = () => {
     return track?.fileUrl === song.fileUrl && playStatus;
   };
 
-  // Create dynamic gradient styles like DisplayGenre
-  const headerStyle = {
-    background: `linear-gradient(to bottom, #1E3264dd 0%, rgba(0,0,0,1) 100%)`,
-    minHeight: "30vh",
-  };
-
-  const mainGradient = {
-    background: `linear-gradient(to bottom, #1E326422 0%, rgba(0,0,0,1) 100%)`,
-  };
-
+  // Show loading state
   if (!albumData || !Array.isArray(albumData) || albumData.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,12 +134,18 @@ const DisplayAlbum = () => {
   }
 
   const artistData = albumData[0]?.artist;
+  const gradients = getArtistGradient(artistData?.id);
+
+  const headerStyle = {
+    background: gradients.header,
+    minHeight: "30vh",
+  };
 
   return (
     <>
-      <div className="min-h-screen text-white" style={mainGradient}>
+      <div className="min-h-screen text-white bg-black">
         <Navbar />
-        {/* Updated Header Section - Better Mobile Spacing */}
+        {/* Header Section */}
         <div className="p-4 md:p-6" style={headerStyle}>
           <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 h-full pt-16 md:pt-20">
             <div className="aspect-square w-[140px] md:w-[232px] h-[140px] md:h-[232px] shadow-lg rounded-lg overflow-hidden mx-auto md:mx-0">
@@ -142,29 +166,67 @@ const DisplayAlbum = () => {
               <h1 className="text-3xl md:text-8xl font-bold my-2 md:my-4 truncate">
                 {artistData?.name || 'Unknown Artist'}
               </h1>
-              <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
-                <span className="font-medium">{albumData.length} songs</span>
+              <div className="flex items-center justify-center md:justify-start gap-2 text-sm align-middle flex-col md:flex-row">
+               <div className="flex items-center gap-2">
+               <span className="font-medium">{albumData.length} songs</span>
                 <span>•</span>
                 <span>{calculateTotalDuration(albumData)} min</span>
+               </div>
+                <div className="flex items-center gap-4">
+                  {artistData?.instagram && (
+                    <a
+                      href={artistData.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-white transition-colors"
+                      aria-label="Instagram"
+                    >
+                      <IconBrandInstagram className="w-[22px] h-[22px]" />
+                    </a>
+                  )}
+                  {artistData?.twitter && (
+                    <a
+                      href={artistData.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-white transition-colors"
+                      aria-label="Twitter"
+                    >
+                      <IconBrandTwitter className="w-[22px] h-[22px]" />
+                    </a>
+                  )}
+                  {artistData?.facebook && (
+                    <a
+                      href={artistData.facebook.startsWith('http') ? artistData.facebook : `https://facebook.com/${artistData.facebook}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-white transition-colors"
+                      aria-label="Facebook"
+                    >
+                      <IconBrandFacebook className="w-[22px] h-[22px]" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Updated Content Section - Mobile Optimized */}
+        {/* Content Section - Now with black background */}
         <div className="px-4 md:px-6 -mt-8 relative z-10">
           {albumData.length > 0 && (
             <div className="flex items-center gap-6 mb-6">
               <button
                 onClick={handlePlayAll}
                 className="w-14 h-14 flex items-center justify-center rounded-full hover:scale-105 transition-all group"
-                style={{ backgroundColor: "#1E3264" }}
+                style={{ backgroundColor: gradients.solid }} // Apply solid color to play button
               >
                 <IconPlayerPlayFilled className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
               </button>
             </div>
           )}
 
+          {/* Table section - now with clean background */}
           <div className="overflow-x-auto">
             <table className="w-full table-auto">
               <thead>

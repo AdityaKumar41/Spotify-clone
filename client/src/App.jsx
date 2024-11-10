@@ -16,7 +16,7 @@ export const App = () => {
   return (
     <>
       {user?.me ? (
-        <div className="h-lvh bg-black">
+        <div className="h-screen bg-black">
           <div className={`${track ? "h-[90%]" : "h-full"} flex`}>
             <Sidebar />
             <Display />

@@ -180,7 +180,7 @@ const Query = {
         throw new Error("Invalid artist ID");
       }
 
-      return await prismaClient.artist.findUnique({
+      const artist = await prismaClient.artist.findUnique({
         where: {
           id: artistId,
         },
@@ -189,6 +189,10 @@ const Query = {
           genres: true,
         },
       });
+
+      console.log(artist);
+
+      return artist;
     } catch (error) {
       console.error("Error fetching artist:", error);
       throw error;
@@ -306,6 +310,7 @@ const Query = {
         },
         include: {
           artist: true,
+          genres: true,
         },
         orderBy: {
           releaseDate: "desc",
@@ -318,7 +323,9 @@ const Query = {
   },
 
   getArtists: async () => {
-    return await prismaClient.artist.findMany({include:{user:true,songs:true,albums:true,genres:true}});
+    return await prismaClient.artist.findMany({
+      include: { user: true, songs: true, albums: true, genres: true },
+    });
   },
 
   // Upload URL generation
@@ -365,56 +372,58 @@ const Query = {
   },
 
   getGenres: async () => {
-    return await prismaClient.genre.findMany({include:{songs:true,artists:true,albums:true}});
+    return await prismaClient.genre.findMany({
+      include: { songs: true, artists: true, albums: true },
+    });
   },
 
   getGenre: async (_parent, { id }) => {
     try {
-        // Parse ID and validate
-        const genreId = parseInt(id, 10);
-        if (isNaN(genreId)) {
-            throw new Error('Invalid genre ID format');
-        }
+      // Parse ID and validate
+      const genreId = parseInt(id, 10);
+      if (isNaN(genreId)) {
+        throw new Error("Invalid genre ID format");
+      }
 
-        const genre = await prismaClient.genre.findUnique({
-            where: { 
-                id: genreId 
-            },
+      const genre = await prismaClient.genre.findUnique({
+        where: {
+          id: genreId,
+        },
+        include: {
+          songs: {
             include: {
-                songs: {
-                    include: {
-                        artist: true,  // Include artist details for each song
-                        album: true,   // Include album details
-                        genres: true   // Include other genres the song might belong to
-                    },
-                    orderBy: {
-                        releaseDate: 'desc'  // Sort songs by release date
-                    }
-                },
-                artists: {
-                    include: {
-                        songs: true,   // Include artists' songs
-                        albums: true   // Include artists' albums
-                    }
-                }
-            }
-        });
+              artist: true, // Include artist details for each song
+              album: true, // Include album details
+              genres: true, // Include other genres the song might belong to
+            },
+            orderBy: {
+              releaseDate: "desc", // Sort songs by release date
+            },
+          },
+          artists: {
+            include: {
+              songs: true, // Include artists' songs
+              albums: true, // Include artists' albums
+            },
+          },
+        },
+      });
 
-        if (!genre) {
-            throw new Error(`Genre with ID ${id} not found`);
-        }
+      if (!genre) {
+        throw new Error(`Genre with ID ${id} not found`);
+      }
 
-        console.log('Found genre:', {
-            id: genre.id,
-            name: genre.name,
-            songCount: genre.songs.length,
-            artistCount: genre.artists.length
-        });
+      console.log("Found genre:", {
+        id: genre.id,
+        name: genre.name,
+        songCount: genre.songs.length,
+        artistCount: genre.artists.length,
+      });
 
-        return genre;
+      return genre;
     } catch (error) {
-        console.error('Error fetching genre:', error);
-        throw new Error(`Failed to fetch genre: ${error.message}`);
+      console.error("Error fetching genre:", error);
+      throw new Error(`Failed to fetch genre: ${error.message}`);
     }
   },
 };
@@ -447,18 +456,18 @@ const Mutation = {
   createSong: async (_parent, args, context) => {
     try {
       if (!context.user) throw new Error("Unauthorized");
-      
+
       console.log("User context:", context.user);
       console.log("Input received:", args.input);
 
       // Find the artist ID for the logged-in user
       const userWithArtist = await prismaClient.user.findUnique({
         where: {
-          id: context.user.id
+          id: context.user.id,
         },
         include: {
-          artist: true
-        }
+          artist: true,
+        },
       });
 
       if (!userWithArtist || !userWithArtist.artist) {
@@ -466,11 +475,11 @@ const Mutation = {
       }
 
       // First ensure all genres exist by upserting them
-      const genrePromises = args.input.genre.map(genreName =>
+      const genrePromises = args.input.genre.map((genreName) =>
         prismaClient.genre.upsert({
           where: { name: genreName },
           update: {}, // No updates needed
-          create: { name: genreName }
+          create: { name: genreName },
         })
       );
 
@@ -489,24 +498,23 @@ const Mutation = {
           coverImage: args.input.coverImage,
           artist: {
             connect: {
-              id: parseInt(userWithArtist.artist.id)
+              id: parseInt(userWithArtist.artist.id),
             },
           },
           genres: {
-            connect: args.input.genre.map((genreName) => ({ 
-              name: genreName
+            connect: args.input.genre.map((genreName) => ({
+              name: genreName,
             })),
           },
         },
         include: {
           artist: true,
-          genres: true
-        }
+          genres: true,
+        },
       });
 
       console.log("Created song:", newSong);
       return newSong;
-
     } catch (error) {
       console.error("Error creating song:", error);
       throw new Error(`Failed to create song: ${error.message}`);
@@ -561,18 +569,18 @@ const Mutation = {
 
       // Delete the song
       await prismaClient.song.delete({
-        where: { id:formatedId },
+        where: { id: formatedId },
       });
 
       return true;
     } catch (error) {
       console.error("Delete song error:", error);
-      
+
       // Return more specific error messages based on error type
       if (error.code === "P2025") {
         throw new Error("Song not found or already deleted");
       }
-      
+
       throw new Error(`Failed to delete song: ${error.message}`);
     }
   },
@@ -581,20 +589,20 @@ const Mutation = {
     if (!ctx.user) throw new Error("Unauthorized");
 
     try {
-      // Debug logs
       console.log("User context:", ctx.user);
       console.log("Input args:", args);
 
-      // First ensure genres exist
-      const genrePromises = args.genre.map((genreName) =>
-        prismaClient.genre.upsert({
-          where: { name: genreName },
-          create: { name: genreName },
-          update: {},
+      // First create or get all genres and collect their IDs
+      const genres = await Promise.all(
+        args.genre.map(async (genreName) => {
+          const genre = await prismaClient.genre.upsert({
+            where: { name: genreName },
+            create: { name: genreName },
+            update: {},
+          });
+          return genre;
         })
       );
-
-      await Promise.all(genrePromises);
 
       const artistData = {
         name: args.artistName,
@@ -612,13 +620,12 @@ const Mutation = {
           },
         },
         genres: {
-          connect: args.genre.map((name) => ({
-            name: name,
+          connect: genres.map((genre) => ({
+            id: genre.id, // Connect using genre IDs instead of names
           })),
         },
       };
 
-      // Debug log
       console.log("Artist data to create:", artistData);
 
       const createdArtist = await prismaClient.artist.create({
@@ -631,9 +638,7 @@ const Mutation = {
         },
       });
 
-      // Debug log
       console.log("Created artist:", createdArtist);
-
       return createdArtist;
     } catch (error) {
       console.error("Create Artist Error Details:", {
