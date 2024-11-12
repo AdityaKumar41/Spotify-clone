@@ -15,7 +15,7 @@ async function serverInit() {
         "http://localhost:8000",
         "http://localhost:5173",
         "https://8vxrhkz9-8000.inc1.devtunnels.ms",
-        "https://spotify-clone-b326-git-main-adityakumar41s-projects.vercel.app/"
+        "https://spotify-clone-b326.vercel.app/"
       ],
       credentials: true,
     })
