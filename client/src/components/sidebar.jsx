@@ -40,8 +40,8 @@ const Sidebar = () => {
             <Popover placement="right">
               <PopoverTrigger>
                 <img
-                  className="w-5  cursor-pointer"
-                  src={assets.plus_icon}
+                  className="w-5 cursor-pointer"
+                  src={assets.stack_icon}
                   alt=""
                 />
               </PopoverTrigger>

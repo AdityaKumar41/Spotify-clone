@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { graphqlClient } from "../api/app"; // Your GraphQL client configuration
 import { GetMe } from "../graphql/query/user";
+import { GetFollowedArtists, IsFollowingArtist } from "../graphql/query/user";
 
 // Auth Hooks
 // export const useVerifyGoogleToken = () => {
@@ -47,32 +48,60 @@ export const useUpdateProfile = () => {
   });
 };
 
-export const useFollowUser = () => {
+// Maps to followArtist resolver
+export const useFollowArtist = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userId) => 
+    mutationFn: (artistId) => 
       graphqlClient.request(`
-        mutation followUser($userId: ID!) {
-          followUser(userId: $userId)
+        mutation followArtist($artistId: ID!) {
+          followArtist(artistId: $artistId)
         }
-      `, { userId }),
-    onSuccess: () => {
+      `, { artistId }),
+    onSuccess: (_, artistId) => {
+      queryClient.invalidateQueries(["followedArtists"]);
+      queryClient.invalidateQueries(["isFollowing", artistId]);
       queryClient.invalidateQueries(["me"]);
     },
   });
 };
 
-export const useUnfollowUser = () => {
+// Maps to unfollowArtist resolver
+export const useUnfollowArtist = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userId) => 
+    mutationFn: (artistId) => 
       graphqlClient.request(`
-        mutation unfollowUser($userId: ID!) {
-          unfollowUser(userId: $userId)
+        mutation unfollowArtist($artistId: ID!) {
+          unfollowArtist(artistId: $artistId)
         }
-      `, { userId }),
-    onSuccess: () => {
+      `, { artistId }),
+    onSuccess: (_, artistId) => {
+      queryClient.invalidateQueries(["followedArtists"]);
+      queryClient.invalidateQueries(["isFollowing", artistId]);
       queryClient.invalidateQueries(["me"]);
     },
+  });
+};
+
+// Maps to getFollowedArtists resolver
+export const useFollowedArtists = (userId, limit, offset) => {
+  return useQuery({
+    queryKey: ["followedArtists", userId, limit, offset],
+    queryFn: async () => {
+      const { getFollowedArtists } = await graphqlClient.request(GetFollowedArtists, { userId, limit, offset });
+      return getFollowedArtists;
+    },
+    enabled: !!userId,
+  });
+};
+
+// Maps to isFollowingArtist resolver
+export const useIsFollowingArtist = (artistId) => {
+  return useQuery({
+    queryKey: ["isFollowing", artistId],
+    queryFn: () => 
+      graphqlClient.request(IsFollowingArtist, { artistId }),
+    enabled: !!artistId,
   });
 };

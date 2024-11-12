@@ -27,7 +27,7 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           {user?.me?.artist && (
             <button
-              onClick={() => navigate('/artist')}
+              onClick={() => navigate("/artist")}
               className="bg-black text-white px-4 py-1 rounded-2xl"
             >
               Upload
@@ -40,9 +40,11 @@ const Navbar = () => {
           <div className="text-black w-10 h-10 rounded-full flex items-center justify-center">
             <Link to={user?.me?.isArtist ? `/artist/profile` : `/profile`}>
               <img
-                className={`rounded-full ${user?.me?.artist ? 'border-2 border-purple-500' : ''}`}
+                className={`rounded-full ${
+                  user?.me?.artist ? "border-2 border-purple-500" : ""
+                }`}
                 src={user?.me?.artist?.image || user?.me?.profileImage}
-                alt={user?.me?.artist ? 'artist_profile' : 'user_profile'}
+                alt={user?.me?.artist ? "artist_profile" : "user_profile"}
               />
             </Link>
           </div>

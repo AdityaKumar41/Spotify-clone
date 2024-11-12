@@ -22,6 +22,9 @@ export const GetMe = gql`
         name
         image
       }
+      followedArtists {
+        id
+      }
     }
   }
 `;
@@ -268,5 +271,21 @@ export const GetSignedURL = gql`
   #graphql
   query getSignedURL($fileName: String!, $fileType: String!) {
     getSignedURL(fileName: $fileName, fileType: $fileType)
+  }
+`;
+
+export const GetFollowedArtists = gql`
+  #graphql
+  query getFollowedArtists($userId: ID!) {
+    getFollowedArtists(userId: $userId) {
+      id
+    }
+  }
+`;
+
+export const IsFollowingArtist = gql`
+  #graphql
+  query isFollowingArtist($artistId: ID!) {
+    isFollowingArtist(artistId: $artistId)
   }
 `;

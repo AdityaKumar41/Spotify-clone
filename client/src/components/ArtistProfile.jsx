@@ -15,14 +15,18 @@ import { PlayerContext } from '../context/PlayerContext'
 import { Select } from "@nextui-org/select"
 import { SelectItem } from "@nextui-org/select"
 import Navbar from './Navbar'
+import { useInView } from 'react-intersection-observer'; // Import the Intersection Observer
 
 export default function ArtistPage() {
   const { data: user, isLoading: isUserLoading } = useMe();
   const { mutate: createSong } = useCreateSong();
   const artistId = user?.me?.artist?.id;
-  const { data: songs, isLoading: isSongsLoading, error: songsError } = useGetSongByArtist(artistId);
+  const { data: tempsong, fetchNextPage: fetchNextSongs, hasNextPage: hasNextSongs, isLoading: isSongsLoading,error:songsError } = useGetSongByArtist(artistId);
+  const songs = tempsong?.pages?.flatMap(page => page) || [];
   const { mutate: deleteSong } = useDeleteSong();
   const { playWithId } = useContext(PlayerContext);
+
+  console.log("songs",songs)
 
   const artist = user?.me?.artist;
   const [uploadError, setUploadError] = useState(null);
@@ -142,6 +146,18 @@ export default function ArtistPage() {
     
   };
   
+  // Set up the Intersection Observer
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 1.0, // Trigger when the bottom of the list is fully in view
+  });
+
+  // Use effect to fetch next page when in view
+  useEffect(() => {
+    if (inView && hasNextSongs && !isSongsLoading) {
+      fetchNextSongs(); // Fetch the next page of songs
+    }
+  }, [inView, hasNextSongs, isSongsLoading, fetchNextSongs]);
+
   return (
     <>
      <div className="relative w-full">
@@ -256,7 +272,7 @@ export default function ArtistPage() {
           <p className="text-[#b3b3b3]">No songs uploaded yet.</p>
         ) : (
           <ul className="space-y-4">
-            {songs.map((song) => (
+            {songs?.map((song) => (
               <li key={song.id} className="flex justify-between items-center p-3 bg-[#242424] rounded-lg hover:bg-[#2a2a2a] transition-colors">
                 <div className="flex items-center space-x-4">
                   <img src={song.coverImage} alt={song.title} className="w-12 h-12 rounded-md object-cover" />
@@ -278,6 +294,7 @@ export default function ArtistPage() {
                 </Button>
               </li>
             ))}
+            <div ref={loadMoreRef} /> {/* Reference for the Intersection Observer */}
           </ul>
         )}
       </div>

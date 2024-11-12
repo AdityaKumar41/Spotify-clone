@@ -15,7 +15,7 @@ import { PlayerContext } from "../context/PlayerContext";
 import Navbar from "./Navbar";
 // import { useCurrentUser } from "../hooks/user";
 import { image } from "@nextui-org/theme";
-import { useMe } from "../hooks/useUser";
+import { useMe, useFollowedArtists, useIsFollowingArtist } from "../hooks/useUser";
 
 export default function Profile() {
   const { data: user } = useMe();
@@ -23,6 +23,13 @@ export default function Profile() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const isArtist = user?.me?.artist;
+
+  // Fetch followed artists data
+  const { data: followArtist } = useFollowedArtists(user?.me?.id);
+  const followedArtists = followArtist;
+  console.log(followedArtists);
+  const followersCount = user?.me?.followersCount || 0;
+  console.log(followersCount);
 
   // Add scroll event listener
   useEffect(() => {
@@ -114,14 +121,14 @@ export default function Profile() {
                     <span>{user?.me?.monthlyListeners || 0} Monthly Listeners</span>
                     <span>•</span>
                     <span>{user?.me?.totalSongs || 0} Songs</span>
+                    <span>•</span>
+                    <span>{followersCount} Followers</span>
                   </>
                 ) : (
                   <>
                     <span>{user?.me?.playlistCount || 0} Public Playlists</span>
-                    {/* <span>•</span>
-                    <span>{user?.me?.followersCount || 0} followers</span>
                     <span>•</span>
-                    <span>{user?.me?.followingCount || 0} following</span> */}
+                    <span>{followedArtists?.length || 0} Followed Artists</span>
                   </>
                 )}
               </div>

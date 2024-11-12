@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import Navbar from "./Navbar";
 import { useParams } from "react-router-dom";
 import { albumsData, assets, songsData } from "../assets/assets";
@@ -16,28 +16,32 @@ import {
   IconBrandTwitter,
   IconBrandInstagram,
 } from "@tabler/icons-react";
+import { useFollowArtist, useUnfollowArtist, useIsFollowingArtist } from "../hooks/useUser";
+import { useMe } from "../hooks/useUser";
+import { useInView } from 'react-intersection-observer'; // Import the Intersection Observer hook
 
 const getArtistGradient = (artistId) => {
   // Simple array of gradient pairs
   const gradientPairs = [
-    ['#1DB954', '#115E2C'], // Spotify green
-    ['#E91E63', '#880E4F'], // Pink
-    ['#2196F3', '#0D47A1'], // Blue
-    ['#FF5722', '#BF360C'], // Deep Orange
-    ['#9C27B0', '#4A148C'], // Purple
-    ['#FF9800', '#E65100'], // Orange
-    ['#00BCD4', '#006064'], // Cyan
-    ['#F44336', '#B71C1C'], // Red
-    ['#4CAF50', '#1B5E20'], // Green
-    ['#3F51B5', '#1A237E'], // Indigo
+    ["#1DB954", "#115E2C"], // Spotify green
+    ["#E91E63", "#880E4F"], // Pink
+    ["#2196F3", "#0D47A1"], // Blue
+    ["#FF5722", "#BF360C"], // Deep Orange
+    ["#9C27B0", "#4A148C"], // Purple
+    ["#FF9800", "#E65100"], // Orange
+    ["#00BCD4", "#006064"], // Cyan
+    ["#F44336", "#B71C1C"], // Red
+    ["#4CAF50", "#1B5E20"], // Green
+    ["#3F51B5", "#1A237E"], // Indigo
   ];
 
   const index = ((parseInt(artistId) || 0) - 1) % gradientPairs.length;
-  const [startColor, endColor] = index >= 0 ? gradientPairs[index] : gradientPairs[0];
+  const [startColor, endColor] =
+    index >= 0 ? gradientPairs[index] : gradientPairs[0];
 
   return {
     header: `linear-gradient(180deg, ${startColor} 0%, rgba(0,0,0,1) 100%)`,
-    solid: startColor // For play button
+    solid: startColor, // For play button
   };
 };
 
@@ -50,7 +54,7 @@ const calculateTotalDuration = (songs) => {
     const minutes = Math.floor(totalSeconds / 60);
     return minutes;
   } catch (error) {
-    console.error('Error calculating duration:', error);
+    console.error("Error calculating duration:", error);
     return 0;
   }
 };
@@ -58,27 +62,54 @@ const calculateTotalDuration = (songs) => {
 const formatDate = (timestamp) => {
   try {
     const date = new Date(parseInt(timestamp));
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   } catch (error) {
-    return 'N/A';
+    return "N/A";
   }
 };
 
-const DisplayAlbum = () => {
+const DisplayArtist = () => {
   const { id } = useParams();
-  const { data: albumData } = useGetSongByArtist(id);
-  const { 
-    track, 
-    playStatus, 
-    setTrack,
-    audioRef,
-    play,
-    pause
-  } = useContext(PlayerContext);
+  const { ref: loadMoreRef, inView } = useInView();
+  const { data: tempData, fetchNextPage: fetchNextSongs, hasNextPage: hasNextSongs, isLoading: isSongsLoading, error: songsError } = useGetSongByArtist(id);
+  const albumData = tempData ? tempData.pages.flatMap((page) => page) : [];
+  const { track, playStatus, setTrack, audioRef, play, pause } = useContext(PlayerContext);
+  const { data: updateFollow, isLoading: checkingFollow } = useIsFollowingArtist(id);
+  const { mutate: followArtist, isLoading: followLoading } = useFollowArtist();
+  const { mutate: unfollowArtist, isLoading: unfollowLoading } = useUnfollowArtist();
+  const { data: meData } = useMe();
+  const me = meData?.me;
+  const isFollowing = updateFollow?.isFollowingArtist;
+
+
+    // Fetch songs when the component is in view
+    useEffect(() => {
+      if (inView && hasNextSongs) {
+        fetchNextSongs(); // Fetch next songs when in view
+      }
+    }, [inView, fetchNextSongs, hasNextSongs]);
+
+
+  if (isSongsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  if (albumData.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        <p>No songs found for this artist.</p>
+      </div>
+    );
+  }
+
 
   const handlePlayAll = async () => {
     if (albumData?.length > 0) {
@@ -86,7 +117,7 @@ const DisplayAlbum = () => {
       try {
         setTrack({
           ...firstSong,
-          name: firstSong.artist?.name || "Unknown Artist"
+          name: firstSong.artist?.name || "Unknown Artist",
         });
         audioRef.current.src = firstSong.fileUrl;
         await audioRef.current.load();
@@ -108,7 +139,7 @@ const DisplayAlbum = () => {
       } else {
         setTrack({
           ...song,
-          name: song.artist?.name || "Unknown Artist"
+          name: song.artist?.name || "Unknown Artist",
         });
         audioRef.current.src = song.fileUrl;
         await audioRef.current.load();
@@ -124,8 +155,49 @@ const DisplayAlbum = () => {
     return track?.fileUrl === song.fileUrl && playStatus;
   };
 
-  // Show loading state
-  if (!albumData || !Array.isArray(albumData) || albumData.length === 0) {
+
+  const handleFollowToggle = () => {
+    if (!me) {
+      return;
+    }
+
+    if (me?.artist || me?.artist?.id === id) {
+      return;
+    }
+
+    if (isFollowing) {
+      unfollowArtist(id, {
+        onSuccess: () => {
+        },
+        onError: (error) => {
+          console.error('Unfollow error:', error);
+        }
+      });
+    } else {
+      followArtist(id, {
+        onSuccess: () => {
+        },
+        onError: (error) => {
+          console.error('Follow error:', error);
+        }
+      });
+    }
+  };
+
+  const showFollowButton = () => {
+    if (!me) {
+      return false;
+    }
+
+    if (me?.artist || me?.artist?.id === id) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // Improve loading state check to include artistData
+  if (!albumData || !Array.isArray(albumData) || albumData.length === 0 || !albumData[0]?.artist) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
@@ -140,6 +212,9 @@ const DisplayAlbum = () => {
     background: gradients.header,
     minHeight: "30vh",
   };
+
+
+  
 
   return (
     <>
@@ -164,14 +239,35 @@ const DisplayAlbum = () => {
             <div className="flex-1 text-center md:text-left">
               <p className="text-sm font-medium">Artist</p>
               <h1 className="text-3xl md:text-8xl font-bold my-2 md:my-4 truncate">
-                {artistData?.name || 'Unknown Artist'}
+                {artistData?.name || "Unknown Artist"}
               </h1>
               <div className="flex items-center justify-center md:justify-start gap-2 text-sm align-middle flex-col md:flex-row">
-               <div className="flex items-center gap-2">
-               <span className="font-medium">{albumData.length} songs</span>
-                <span>•</span>
-                <span>{calculateTotalDuration(albumData)} min</span>
-               </div>
+                {showFollowButton() && (
+                  <button
+                    onClick={handleFollowToggle}
+                    disabled={checkingFollow || followLoading || unfollowLoading}
+                    className={`px-4 py-2 rounded-full transition-all font-bold text-sm border-2 ${
+                      isFollowing 
+                        ? 'bg-neutral-800 text-white hover:bg-neutral-700 border-neutral-600' 
+                        : `bg-[${gradients.solid}] text-white hover:bg-opacity-80 border-[${gradients.solid}]`
+                    }`}
+                  >
+                    {checkingFollow || followLoading || unfollowLoading ? (
+                      <span className="inline-block w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" />
+                    ) : isFollowing ? (
+                      'Following'
+                    ) : (
+                      'Follow'
+                    )}
+                  </button>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{albumData.length} songs</span>
+                  <span>•</span>
+                  <span>{calculateTotalDuration(albumData)} min</span>
+                </div>
+
                 <div className="flex items-center gap-4">
                   {artistData?.instagram && (
                     <a
@@ -197,7 +293,11 @@ const DisplayAlbum = () => {
                   )}
                   {artistData?.facebook && (
                     <a
-                      href={artistData.facebook.startsWith('http') ? artistData.facebook : `https://facebook.com/${artistData.facebook}`}
+                      href={
+                        artistData.facebook.startsWith("http")
+                          ? artistData.facebook
+                          : `https://facebook.com/${artistData.facebook}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-white/70 hover:text-white transition-colors"
@@ -234,7 +334,9 @@ const DisplayAlbum = () => {
                   <th className="w-10 md:w-14 text-center pb-2">#</th>
                   <th className="text-left pb-2">Title</th>
                   <th className="hidden md:table-cell text-left pb-2">Album</th>
-                  <th className="hidden md:table-cell text-left pb-2">Date added</th>
+                  <th className="hidden md:table-cell text-left pb-2">
+                    Date added
+                  </th>
                   <th className="w-14 pb-2">
                     <IconClock className="w-5 h-5" />
                   </th>
@@ -265,8 +367,12 @@ const DisplayAlbum = () => {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className={`font-medium truncate
-                            ${isPlaying(song) ? "text-green-500" : "text-white"}`}>
+                          <div
+                            className={`font-medium truncate
+                            ${
+                              isPlaying(song) ? "text-green-500" : "text-white"
+                            }`}
+                          >
                             {song.title}
                           </div>
                           <div className="text-sm text-neutral-400 truncate">
@@ -275,18 +381,28 @@ const DisplayAlbum = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="hidden md:table-cell py-2">{song.album?.title || artistData?.name}</td>
-                    <td className="hidden md:table-cell py-2">{formatDate(song.releaseDate)}</td>
+                    <td className="hidden md:table-cell py-2">
+                      {song.album?.title || artistData?.name}
+                    </td>
+                    <td className="hidden md:table-cell py-2">
+                      {formatDate(song.releaseDate)}
+                    </td>
                     <td className="py-2 text-right pr-4">
-                      {song.duration ? 
-                        `${Math.floor(song.duration / 60)}:${(song.duration % 60).toString().padStart(2, '0')}` 
-                        : '--:--'}
+                      {song.duration
+                        ? `${Math.floor(song.duration / 60)}:${(
+                            song.duration % 60
+                          )
+                            .toString()
+                            .padStart(2, "0")}`
+                        : "--:--"}
                     </td>
                     <td className="py-2 w-14">
                       <button
                         onClick={() => handleSongPlay(song)}
                         className={`p-2 rounded-full hover:bg-white/10 transition-all
-                          ${!song.fileUrl ? "cursor-not-allowed opacity-50" : ""}`}
+                          ${
+                            !song.fileUrl ? "cursor-not-allowed opacity-50" : ""
+                          }`}
                         disabled={!song.fileUrl}
                       >
                         {isPlaying(song) ? (
@@ -301,10 +417,13 @@ const DisplayAlbum = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Load more ref for infinite scroll */}
+          <div ref={loadMoreRef} className="h-10" /> {/* Empty div to trigger loading */}
         </div>
       </div>
     </>
   );
 };
 
-export default DisplayAlbum;
+export default DisplayArtist;

@@ -4,32 +4,26 @@ import { useGetSongs } from "../hooks/useSong";
 export const PlayerContext = createContext();
 
 const PlayerContextProvider = (props) => {
-    const { data: songs } = useGetSongs();
-    // console.log(songs);
+    const { data, fetchNextPage, hasNextPage } = useGetSongs();
     const audioRef = useRef();
     const seekBg = useRef();
     const seekBar = useRef();
 
-    // Initialize track with the first song if available
     const [track, setTrack] = useState(null);
     const [playStatus, setPlayStatus] = useState(false);
     const [time, setTime] = useState({
-        currentTime: {
-            seconds: 0,
-            minute: 0,
-        },
-        totalTime: {
-            seconds: 0,
-            minute: 0,
-        },
+        currentTime: { seconds: 0, minute: 0 },
+        totalTime: { seconds: 0, minute: 0 },
     });
 
-    // Set initial track when songs are loaded
-    // useEffect(() => {
-    //     if (songs?.length > 0 && !track) {
-    //         setTrack(songs[0]);
-    //     }
-    // }, [songs]);
+    // Flatten paginated songs data
+    const songs = data?.pages?.flatMap(page => page) || [];
+
+    useEffect(() => {
+        if (songs.length > 0 && !track) {
+            // setTrack(songs[0]);
+        }
+    }, [songs]);
 
     const play = () => {
         if (audioRef.current && track) {
@@ -46,11 +40,11 @@ const PlayerContextProvider = (props) => {
     };
 
     const playWithId = async (id) => {
-        const selectedTrack = songs?.find(song => song.id === id);
+        const selectedTrack = songs.find(song => song.id === id);
         if (selectedTrack) {
             setTrack(selectedTrack);
             if (audioRef.current) {
-                audioRef.current.src = selectedTrack.fileUrl; // Make sure this matches your song object property
+                audioRef.current.src = selectedTrack.fileUrl;
                 await audioRef.current.play();
                 setPlayStatus(true);
             }
@@ -58,7 +52,7 @@ const PlayerContextProvider = (props) => {
     };
 
     const previous = async () => {
-        if (!track || !songs?.length) return;
+        if (!track || !songs.length) return;
         
         const currentIndex = songs.findIndex(song => song.id === track.id);
         if (currentIndex > 0) {
@@ -73,8 +67,8 @@ const PlayerContextProvider = (props) => {
     };
 
     const next = async () => {
-        const currentIndex = songs?.findIndex((song) => song.id === track?.id);
-        if (currentIndex < songs?.length - 1) {
+        const currentIndex = songs.findIndex(song => song.id === track?.id);
+        if (currentIndex < songs.length - 1) {
             const nextTrack = songs[currentIndex + 1];
             setTrack(nextTrack);
             if (audioRef.current) {
@@ -82,6 +76,9 @@ const PlayerContextProvider = (props) => {
                 await audioRef.current.play();
                 setPlayStatus(true);
             }
+        } else if (hasNextPage) {
+            // Fetch more songs if there’s a next page
+            await fetchNextPage();
         }
     };
 
@@ -118,28 +115,28 @@ const PlayerContextProvider = (props) => {
         }
     }, [audioRef]);
 
-    // Add event listener for song end
     useEffect(() => {
         if (audioRef.current) {
             const handleSongEnd = async () => {
-                const currentIndex = songs?.findIndex((song) => song.id === track?.id);
-                if (currentIndex < songs?.length - 1) {
+                const currentIndex = songs.findIndex(song => song.id === track?.id);
+                if (currentIndex < songs.length - 1) {
                     const nextTrack = songs[currentIndex + 1];
                     setTrack(nextTrack);
                     audioRef.current.src = nextTrack.fileUrl;
                     await audioRef.current.play();
                     setPlayStatus(true);
+                } else if (hasNextPage) {
+                    await fetchNextPage();
                 }
             };
 
             audioRef.current.addEventListener('ended', handleSongEnd);
             
-            // Cleanup listener when component unmounts or track changes
             return () => {
                 audioRef.current?.removeEventListener('ended', handleSongEnd);
             };
         }
-    }, [audioRef, track, songs]);
+    }, [audioRef, track, songs, fetchNextPage, hasNextPage]);
 
     useEffect(() => {
         if ('mediaSession' in navigator && track) {
@@ -147,16 +144,9 @@ const PlayerContextProvider = (props) => {
                 title: track.title,
                 artist: track.artist?.name || 'Unknown Artist',
                 album: track.album || 'Unknown Album',
-                artwork: [
-                    {
-                        src: track.coverImage,
-                        sizes: '512x512',
-                        type: 'image/jpeg'
-                    }
-                ]
+                artwork: [{ src: track.coverImage, sizes: '512x512', type: 'image/jpeg' }],
             });
 
-            // Define media session actions
             navigator.mediaSession.setActionHandler('play', play);
             navigator.mediaSession.setActionHandler('pause', pause);
             navigator.mediaSession.setActionHandler('previoustrack', previous);

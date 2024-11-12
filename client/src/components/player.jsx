@@ -110,6 +110,7 @@ const Player = () => {
                     <Link
                       to={`/artists/${track.artist?.id}`}
                       className="text-xl text-gray-300 hover:underline"
+                      onClick={() => setIsFullScreen(false)}
                     >
                       {track.artist?.name}
                     </Link>
@@ -213,6 +214,7 @@ const Player = () => {
                     ? `${track.title.substring(0, 18)}...`
                     : track.title || "Unknown Title"}
                 </p>
+
                 <Link
                   to={`/artists/${track.artist?.id}`}
                   className="cursor-pointer hover:underline"

@@ -1,9 +1,9 @@
 import { gql } from "graphql-request";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { graphqlClient } from "../api/app";
 
 const CREATE_SONG_MUTATION = gql`
-   mutation CreateSong($input: CreateSongInput!) {
+  mutation CreateSong($input: CreateSongInput!) {
     createSong(input: $input) {
       id
       title
@@ -24,8 +24,8 @@ const CREATE_SONG_MUTATION = gql`
 `;
 
 const GET_SONGS_QUERY = gql`
-  query GetSongs {
-    getSongs {
+  query GetSongs($limit: Int, $offset: Int) {
+    getSongs(limit: $limit, offset: $offset) {
       id
       duration
       title
@@ -40,8 +40,8 @@ const GET_SONGS_QUERY = gql`
 `;
 
 const GET_SONG_BY_ARTIST_QUERY = gql`
-  query GetSongByArtist($artistId: ID!) {
-    getSongByArtist(artistId: $artistId) {
+  query GetSongByArtist($artistId: ID!, $limit: Int, $offset: Int) {
+    getSongByArtist(artistId: $artistId, limit: $limit, offset: $offset) {
       id
       title
       duration
@@ -49,9 +49,9 @@ const GET_SONG_BY_ARTIST_QUERY = gql`
       fileUrl
       releaseDate
       genres {
-          id
-          name
-        }
+        id
+        name
+      }
       artist {
         id
         name
@@ -60,14 +60,17 @@ const GET_SONG_BY_ARTIST_QUERY = gql`
         facebook
         instagram
         twitter
+        followers {
+          id
+        }
       }
     }
   }
 `;
 
 const SEARCH_SONGS_QUERY = gql`
-  query SearchSongs($query: String!) {
-    searchSongs(query: $query) {
+  query SearchSongs($query: String!, $limit: Int, $offset: Int) {
+    searchSongs(query: $query, limit: $limit, offset: $offset) {
       id
       title
       duration
@@ -90,31 +93,31 @@ const DELETE_SONG_MUTATION = gql`
 
 const GET_GENRES_QUERY = gql`
   query GetGenres {
-  getGenres {
-    id
-    name
+    getGenres {
+      id
+      name
+    }
   }
-}
 `;
 
 const GET_GENRE_QUERY_BY_ID = gql`
-query GetGenre($getGenreId: ID!) {
-  getGenre(id: $getGenreId) {
-    name
-    id
-    songs {
-      coverImage
-      duration
-      fileUrl
-      releaseDate
-      title
-      artist {
-        id
-        name
+  query GetGenre($getGenreId: ID!, $limit: Int, $offset: Int) {
+  getGenre(id: $getGenreId, limit: $limit, offset: $offset) {
+      name
+      id
+      songs {
+        coverImage
+        duration
+        fileUrl
+        releaseDate
+        title
+        artist {
+          id
+          name
+        }
       }
     }
   }
-}
 `;
 
 export const useCreateSong = () => {
@@ -129,8 +132,8 @@ export const useCreateSong = () => {
           releaseDate: input.releaseDate,
           fileUrl: input.fileUrl,
           coverImage: input.coverImage,
-          genre: input.genre
-        }
+          genre: input.genre,
+        },
       });
       console.log("Mutation response:", data);
       return data.createSong;
@@ -140,41 +143,62 @@ export const useCreateSong = () => {
     },
     onError: (error) => {
       console.error("Mutation error:", error);
-    }
+    },
   });
 };
 
 export const useGetSongs = () => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["songs"],
-    queryFn: async () => {
-      const { getSongs } = await graphqlClient.request(GET_SONGS_QUERY);
+    queryFn: async ({ pageParam = 0 }) => {
+      const { getSongs } = await graphqlClient.request(GET_SONGS_QUERY, { limit: 10, offset: pageParam });
       return getSongs;
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length === 10) {
+        return allPages.length * 10;
+      }
+      return undefined;
     },
   });
 };
 
 export const useGetSongByArtist = (artistId) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["songsByArtist", artistId],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       const { getSongByArtist } = await graphqlClient.request(
         GET_SONG_BY_ARTIST_QUERY,
-        { artistId }
+        { artistId, limit: 10, offset: pageParam }
       );
       return getSongByArtist;
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length === 10) {
+        return allPages.length * 10;
+      }
+      return undefined;
+    },
+    enabled: !!artistId,
   });
 };
 
 export const useSearchSongs = (query) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["songs", "search", query],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       const { searchSongs } = await graphqlClient.request(SEARCH_SONGS_QUERY, {
         query,
+        limit: 10,
+        offset: pageParam,
       });
       return searchSongs;
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length === 10) {
+        return allPages.length * 10;
+      }
+      return undefined;
     },
     enabled: !!query,
   });
@@ -184,7 +208,9 @@ export const useDeleteSong = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id) => {
-      const { deleteSong } = await graphqlClient.request(DELETE_SONG_MUTATION, { id });
+      const { deleteSong } = await graphqlClient.request(DELETE_SONG_MUTATION, {
+        id,
+      });
       return deleteSong;
     },
     onSuccess: () => {
@@ -204,21 +230,25 @@ export const useGetGenres = () => {
 };
 
 export const useGetGenre = (id) => {
-  return useQuery({
-      queryKey: ['genre', id],
-      queryFn: async () => {
-          try {
-              // Notice here: we're using getGenreId as the variable name to match the query
-              const { getGenre } = await graphqlClient.request(GET_GENRE_QUERY_BY_ID, { 
-                  getGenreId: id  // This needs to match the variable name in the query
-              });
-              console.log('Genre data received:', getGenre);
-              return getGenre;
-          } catch (error) {
-              console.error('Error fetching genre:', error);
-              throw error;
-          }
-      },
-      enabled: !!id
+  return useInfiniteQuery({
+    queryKey: ["genre", id],
+    queryFn: async ({ pageParam = 0 }) => {
+      const { getGenre } = await graphqlClient.request(
+        GET_GENRE_QUERY_BY_ID,
+        {
+          getGenreId: id,
+          limit: 2,
+          offset: pageParam,
+        }
+      );
+      return getGenre;
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length === 2) {
+        return allPages.length * 2;
+      }
+      return undefined;
+    },
+    enabled: !!id,
   });
 };

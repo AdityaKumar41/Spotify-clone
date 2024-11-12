@@ -16,6 +16,6 @@ export default defineConfig({
   },
   server: {
     host: "0.0.0.0", // Expose on network
-    port: 3000, // Specify your desired port, e.g., 3000
+    port: 8000, // Specify your desired port, e.g., 3000
   },
 });

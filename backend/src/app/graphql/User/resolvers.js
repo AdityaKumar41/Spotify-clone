@@ -66,8 +66,7 @@ const Query = {
           },
           include: {
             playlists: true,
-            followers: true,
-            following: true,
+            followedArtists: true,
             artist: true,
           },
         });
@@ -102,8 +101,7 @@ const Query = {
         playlists: true,
         savedTracks: true,
         savedAlbums: true,
-        following: true,
-        followers: true,
+        followedArtists: true,
         artist: true,
       },
     });
@@ -114,13 +112,12 @@ const Query = {
       where: { id },
       include: {
         playlists: { where: { isPublic: true } },
-        followers: true,
-        following: true,
+        followedArtists: true,
       },
     });
   },
 
-  searchUsers: async (_parent, { query }) => {
+  searchUsers: async (_parent, { query, limit, offset }) => {
     return await prismaClient.user.findMany({
       where: {
         OR: [
@@ -128,6 +125,8 @@ const Query = {
           { email: { contains: query, mode: "insensitive" } },
         ],
       },
+      take: limit,
+      skip: offset,
     });
   },
 
@@ -154,7 +153,7 @@ const Query = {
     });
   },
 
-  searchTracks: async (_parent, { query }) => {
+  searchTracks: async (_parent, { query, limit, offset }) => {
     return await prismaClient.track.findMany({
       where: {
         OR: [
@@ -166,6 +165,8 @@ const Query = {
         artist: true,
         album: true,
       },
+      take: limit,
+      skip: offset,
     });
   },
 
@@ -199,11 +200,12 @@ const Query = {
     }
   },
 
-  getArtistTopTracks: async (_parent, { id }) => {
+  getArtistTopTracks: async (_parent, { id, limit, offset }) => {
     return await prismaClient.track.findMany({
       where: { artistId: id },
       orderBy: { playCount: "desc" },
-      take: 10,
+      take: limit,
+      skip: offset,
       include: {
         artist: true,
         album: true,
@@ -228,7 +230,7 @@ const Query = {
     return playlist;
   },
 
-  getUserPlaylists: async (_parent, { userId }, context) => {
+  getUserPlaylists: async (_parent, { userId, limit, offset }, context) => {
     const where = { userId };
     if (userId !== context.user?.id) {
       where.isPublic = true;
@@ -240,91 +242,106 @@ const Query = {
         tracks: { include: { artist: true } },
         owner: true,
       },
+      take: limit,
+      skip: offset,
     });
   },
 
-  getSongs: async () => {
-    try {
-      return await prismaClient.song.findMany({
-        include: {
-          artist: true,
-        },
-        orderBy: {
-          releaseDate: "desc", // Show newest songs first
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching songs:", error);
-      throw new Error("Failed to fetch songs");
-    }
+  getSongs: async (_parent, { limit, offset }) => {
+    return await prismaClient.song.findMany({
+      include: {
+        artist: true,
+      },
+      orderBy: {
+        releaseDate: "desc", // Show newest songs first
+      },
+      take: limit,
+      skip: offset,
+    });
   },
 
-  searchSongs: async (_parent, { query }) => {
-    try {
-      if (!query) {
-        throw new Error("Search query cannot be empty");
-      }
-
-      return await prismaClient.song.findMany({
-        where: {
-          OR: [
-            { title: { contains: query, mode: "insensitive" } },
-            { artist: { name: { contains: query, mode: "insensitive" } } },
-            { album: { title: { contains: query, mode: "insensitive" } } },
-          ],
-        },
-        include: {
-          artist: true,
-        },
-        orderBy: {
-          releaseDate: "desc",
-        },
-      });
-    } catch (error) {
-      console.error("Error searching songs:", error);
-      throw new Error("Failed to search songs");
-    }
+  searchSongs: async (_parent, { query, limit, offset }) => {
+    return await prismaClient.song.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { artist: { name: { contains: query, mode: "insensitive" } } },
+          { album: { title: { contains: query, mode: "insensitive" } } },
+        ],
+      },
+      include: {
+        artist: true,
+      },
+      orderBy: {
+        releaseDate: "desc",
+      },
+      take: limit,
+      skip: offset,
+    });
   },
 
-  getSongByArtist: async (_parent, { artistId }) => {
-    try {
-      if (!artistId) {
-        throw new Error("Artist ID is required");
-      }
-
-      // Convert string ID to integer if needed
-      const parsedArtistId =
-        typeof artistId === "string" ? parseInt(artistId, 10) : artistId;
-
-      if (isNaN(parsedArtistId)) {
-        throw new Error("Invalid artist ID");
-      }
-
-      console.log(parsedArtistId);
-
-      return await prismaClient.song.findMany({
-        where: {
-          artist: {
-            id: parsedArtistId,
+  getSongByArtist: async (_parent, { artistId, limit, offset }) => {
+    return await prismaClient.song.findMany({
+      where: {
+        artist: {
+          id: parseInt(artistId, 10),
+        },
+      },
+      include: {
+        artist: {
+          include: {
+            followers: true,
           },
         },
-        include: {
-          artist: true,
-          genres: true,
-        },
-        orderBy: {
-          releaseDate: "desc",
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching artist songs:", error);
-      throw new Error(`Failed to fetch songs for artist: ${error.message}`);
-    }
+        genres: true,
+      },
+      orderBy: {
+        releaseDate: "desc",
+      },
+      take: limit,
+      skip: offset,
+    });
   },
 
-  getArtists: async () => {
+  getArtists: async (_parent, { limit, offset }) => {
     return await prismaClient.artist.findMany({
       include: { user: true, songs: true, albums: true, genres: true },
+      take: limit,
+      skip: offset,
+    });
+  },
+
+  searchArtists: async (_parent, { query, limit, offset }) => {
+    return await prismaClient.artist.findMany({
+      where: {
+        name: { contains: query, mode: "insensitive" },
+      },
+      include: { user: true, songs: true, albums: true, genres: true },
+      take: limit,
+      skip: offset,
+    });
+  },
+
+  searchAlbums: async (_parent, { query, limit, offset }) => {
+    return await prismaClient.album.findMany({
+      where: {
+        title: { contains: query, mode: "insensitive" },
+      },
+      include: { artist: true, tracks: true },
+      take: limit,
+      skip: offset,
+    });
+  },
+
+  getFeaturedPlaylists: async (_parent, { limit, offset }) => {
+    return await prismaClient.playlist.findMany({
+      where: { isFeatured: true },
+      include: {
+        tracks: { include: { artist: true } },
+        owner: true,
+      },
+      take: limit,
+      skip: offset,
     });
   },
 
@@ -371,14 +388,17 @@ const Query = {
     }
   },
 
-  getGenres: async () => {
+  getGenres: async (_parent, { limit, offset }) => {
     return await prismaClient.genre.findMany({
       include: { songs: true, artists: true, albums: true },
+      take: limit,
+      skip: offset,
     });
   },
 
-  getGenre: async (_parent, { id }) => {
+  getGenre: async (_parent, { id, limit = 10, offset = 0 }) => {
     try {
+      console.log("Fetching genre with ID:", id);
       // Parse ID and validate
       const genreId = parseInt(id, 10);
       if (isNaN(genreId)) {
@@ -399,6 +419,8 @@ const Query = {
             orderBy: {
               releaseDate: "desc", // Sort songs by release date
             },
+            take: limit, // Limit the number of songs returned
+            skip: offset, // Skip the number of songs based on offset
           },
           artists: {
             include: {
@@ -425,6 +447,43 @@ const Query = {
       console.error("Error fetching genre:", error);
       throw new Error(`Failed to fetch genre: ${error.message}`);
     }
+  },
+
+
+  getFollowedArtists: async (_parent, { userId, limit, offset }, context) => {
+    
+    const follows = await prismaClient.follow.findMany({
+      where: { userId: parseInt(userId) },
+      include: {
+        artist: {
+          include: {
+            songs: true,
+            albums: true,
+            genres: true
+          }
+        }
+      },
+      take: limit,
+      skip: offset,
+      orderBy:{
+        followedAt: 'desc'
+      }
+      });
+    return follows.map(follow => follow.artist);
+  },
+
+  isFollowingArtist: async (_parent, { artistId }, context) => {
+    if (!context.user) return false;
+    
+    const follow = await prismaClient.follow.findUnique({
+      where: {
+        userId_artistId: {
+          userId: context.user.id,
+          artistId: parseInt(artistId)
+        }
+      }
+    });
+    return !!follow;
   },
 };
 
@@ -701,7 +760,7 @@ const Mutation = {
     await prismaClient.user.update({
       where: { id: context.user.id },
       data: {
-        following: { connect: { id: userId } },
+        followedArtists: { connect: { id: userId } },
       },
     });
     return true;
@@ -712,7 +771,7 @@ const Mutation = {
     await prismaClient.user.update({
       where: { id: context.user.id },
       data: {
-        following: { disconnect: { id: userId } },
+        followedArtists: { disconnect: { id: userId } },
       },
     });
     return true;
@@ -806,6 +865,66 @@ const Mutation = {
         artist: { connect: { id: artist.id } },
       },
     });
+  },
+
+  followArtist: async (_parent, { artistId }, context) => {
+    if (!context.user) throw new Error("Unauthorized");
+
+    const parsedArtistId = parseInt(artistId, 10);
+    if (isNaN(parsedArtistId)) throw new Error("Invalid artist ID");
+
+    // Check if the artist exists
+    const artist = await prismaClient.artist.findUnique({
+      where: { id: parsedArtistId },
+    });
+
+    if (!artist) throw new Error("Artist not found");
+
+    // Check if user is trying to follow themselves
+    if (artist.id === context.user.artistId) {
+      throw new Error("Cannot follow your own artist profile");
+    }
+
+    try {
+      await prismaClient.follow.create({
+        data: {
+          userId: context.user.id,
+          artistId: parsedArtistId,
+        },
+      });
+      return true;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new Error("Already following this artist");
+      }
+      console.error("Error following artist:", error);
+      throw new Error("Failed to follow artist");
+    }
+  },
+
+  unfollowArtist: async (_parent, { artistId }, context) => {
+    if (!context.user) throw new Error("Unauthorized");
+
+    const parsedArtistId = parseInt(artistId, 10);
+    if (isNaN(parsedArtistId)) throw new Error("Invalid artist ID");
+
+    try {
+      await prismaClient.follow.delete({
+        where: {
+          userId_artistId: {
+            userId: context.user.id,
+            artistId: parsedArtistId,
+          }
+        },
+      });
+      return true;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new Error("Not following this artist");
+      }
+      console.error("Error unfollowing artist:", error);
+      throw new Error("Failed to unfollow artist");
+    }
   },
 };
 

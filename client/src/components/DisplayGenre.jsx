@@ -9,15 +9,17 @@ import {
   IconPlayerPauseFilled,
 } from "@tabler/icons-react";
 import { useGetGenre } from "../hooks/useSong";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 import Navbar from "./Navbar";
+import { useInView } from 'react-intersection-observer'; // Import the intersection observer
 
 export default function DisplayGenre() {
   const { id } = useParams();
   const location = useLocation();
   const genreColor = location.state?.color || "#1E3264"; // Default color if none provided
-  const { data: genre, isLoading, error } = useGetGenre(id);
+  const { data: tempgen, isLoading, error, fetchNextPage, hasNextPage } = useGetGenre(id);
+  const genre = tempgen?.pages[0]; 
   const { 
     track, 
     playStatus, 
@@ -26,6 +28,16 @@ export default function DisplayGenre() {
     play,
     pause
   } = useContext(PlayerContext);
+
+  const { ref: loadMoreRef, inView } = useInView(); 
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  useEffect(() => {
+    if (inView && !isLoading && hasNextPage && !loadingMore) {
+      setLoadingMore(true); // Set loading state
+      fetchNextPage().finally(() => setLoadingMore(false)); // Reset loading state after fetch
+    }
+  }, [inView, isLoading, hasNextPage, fetchNextPage, loadingMore]);
 
   // Debug log to check context values
   useEffect(() => {
@@ -51,7 +63,6 @@ export default function DisplayGenre() {
     }
   };
 
-
   // Get up to 4 song images for the playlist cover
   const getPlaylistImages = () => {
     if (!genre?.songs?.length) return [];
@@ -74,7 +85,7 @@ export default function DisplayGenre() {
           setTrack({
             ...firstPlayableSong,
             id: firstPlayableSong._id, // Use the actual _id instead of fileUrl
-            artist: firstPlayableSong.artist?.name || "Unknown Artist"
+            name: firstPlayableSong.artist?.name || "Unknown Artist"
           });
           
           // Wait for audio to load before playing
@@ -106,7 +117,7 @@ export default function DisplayGenre() {
         setTrack({
           ...song,
           id: song._id, // Use the actual _id instead of fileUrl
-          artist: song.artist?.name || "Unknown Artist"
+          name: song.artist?.name || "Unknown Artist"
         });
         
         // Wait for audio to load before playing
@@ -143,13 +154,14 @@ export default function DisplayGenre() {
     );
   }
 
-  // ... error and null checks remain the same ...
+  console.log('genere', genre)
 
+  // Render
   return (
     <>
       <div className="min-h-screen text-white" style={mainGradient}>
         <Navbar />
-        {/* Updated Header Section */}
+        {/* Header Section */}
         <div className="p-4 md:p-6" style={headerStyle}>
           <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 h-full pt-16 md:pt-20">
             <div className="aspect-square w-[160px] md:w-[232px] h-[160px] md:h-[232px] shadow-lg rounded-lg overflow-hidden mx-auto md:mx-0">
@@ -198,9 +210,8 @@ export default function DisplayGenre() {
           </div>
         </div>
 
-        {/* Updated Content Section */}
+        {/* Content Section */}
         <div className="px-4 md:px-6 -mt-8 relative z-10">
-          {/* Play Button with Dynamic Color */}
           {genre?.songs?.length > 0 && (
             <div className="flex items-center gap-6 mb-6">
               <button
@@ -227,40 +238,38 @@ export default function DisplayGenre() {
                     <th className="w-10 md:w-14 text-center pb-2">#</th>
                     <th className="text-left pb-2">Title</th>
                     <th className="hidden md:table-cell text-left pb-2">Album</th>
-                    <th className="hidden md:table-cell text-left pb-2">Date added</th>
-                    <th className="w-14 pb-2">
-                      <IconClock className="w-5 h-5" />
+                    <th className="hidden md:table-cell text-left pb-2">Date Added</th>
+                    <th className="w-8 md:w-16 text-center pb-2">
+                      <IconClock className="w-4 h-4 mx-auto" />
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {genre.songs.map((song, index) => (
                     <tr
-                      key={song.fileUrl}
-                      className={`group hover:bg-white/10 rounded-md text-sm text-neutral-400 
-                        ${isPlaying(song) ? "bg-white/20" : ""}`}
+                      key={song._id}
+                      className={`text-sm hover:bg-neutral-800 rounded transition-colors group ${
+                        isPlaying(song) ? "text-green-500" : "text-neutral-300"
+                      }`}
+                      onClick={() => handleSongPlay(song)}
                     >
-                      <td className="w-10 md:w-14 text-center py-2">
-                        <span className={`group-hover:hidden ${isPlaying(song) ? "hidden" : ""}`}>
-                          {index + 1}
-                        </span>
+                      
+                      <td className="text-center p-2">{index + 1}</td>
+                      
+                      <td className="py-2">
+                        <div className="flex items-center gap-2 md:gap-4 align-middle">
                         <button
-                          onClick={() => handleSongPlay(song)}
-                          className={`${isPlaying(song) || "group-hover:block"} 
-                            ${isPlaying(song) ? "block" : "hidden"} mx-auto
-                            ${!song.fileUrl ? "cursor-not-allowed opacity-50" : ""}`}
-                          disabled={!song.fileUrl}
-                        >
-                          {isPlaying(song) ? (
-                            <IconPlayerPauseFilled className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <IconPlayerPlayFilled className="w-4 h-4 text-white" />
-                          )}
-                        </button>
-                      </td>
-                      <td className="py-2 min-w-[200px]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
+                            onClick={() => handleSongPlay(song)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900 hover:bg-neutral-800 transition-all"
+                          >
+                            {isPlaying(song) ? (
+                              <IconPlayerPauseFilled className="w-5 h-5" />
+                            ) : (
+                              <IconPlayerPlayFilled className="w-5 h-5" />
+                            )}
+                          </button>
+                        <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
+                          
                             {song.coverImage ? (
                               <img
                                 src={song.coverImage}
@@ -273,33 +282,31 @@ export default function DisplayGenre() {
                               </div>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <div
-                              className={`font-medium hover:underline cursor-pointer truncate
-                                ${isPlaying(song) ? `text-[${genreColor}]` : "text-white"}`}
-                            >
-                              {song.title}
-                            </div>
-                            <div className="text-sm text-neutral-400 truncate">
+                          <div>
+                            <p className="font-medium truncate">{song.title}</p>
+                            <p className="text-xs text-neutral-400">
                               {song.artist?.name || "Unknown Artist"}
-                            </div>
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="hidden md:table-cell py-2">-</td>
-                      <td className="hidden md:table-cell py-2">{formatDate(song.releaseDate)}</td>
-                      <td className="py-2">
-                        <div className="flex items-center gap-4 justify-end">
-                          <button className="opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
-                            <IconHeart className="w-4 h-4 hover:text-white transition-colors" />
-                          </button>
-                          <span>{formatDuration(song.duration)}</span>
-                        </div>
+                      <td className="hidden md:table-cell text-neutral-400">{song.album?.name || "-"}</td>
+                      <td className="hidden md:table-cell text-neutral-400">
+                        {formatDate(song.releaseDate)}
                       </td>
+                      <td className="text-center text-neutral-400">
+                        {formatDuration(song.duration)}
+                      </td>
+                      
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {hasNextPage && (
+                <div ref={loadMoreRef} className="py-4 text-center">
+                  Loading more...
+                </div>
+              )}
             </div>
           )}
         </div>

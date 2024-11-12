@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import DisplayHome from "./DisplayHome";
-import DisplayAlbum from "./DisplyAlbum";
+import DisplayArtist from "./DisplyArtist";
 import Profile from "./Profile";
 import Artist from "./Artist";
 import { albumsData } from "../assets/assets";
@@ -11,6 +11,7 @@ import ArtistPage from "./ArtistProfile";
 import Search from "./Search";
 import DisplayGenre from "./DisplayGenre";
 import { NotFound } from "./NotFound";
+import CreatePlaylist from "./CreatePlaylist";
 const Display = () => {
   const { data: user } = useMe();
   const displayref = useRef();
@@ -46,8 +47,10 @@ const Display = () => {
         />
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<DisplayHome />} />
-        <Route path="/artists/:id" element={<DisplayAlbum />} />
+        <Route path="/artists/:id" element={<DisplayArtist />} />
         <Route path="/genres/:id" element={<DisplayGenre />} />
+        {/* <Route path="/playlist/:id" element={<DisplayPlaylist />} /> */}
+        {/* <Route path="/create-playlist" element={<CreatePlaylist />} /> */}
         <Route path="/search" element={<Search />} />
         {/* not found */}
         <Route path="*" element={<NotFound />} />

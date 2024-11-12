@@ -12,9 +12,9 @@ async function serverInit() {
   app.use(
     cors({
       origin: [
-        "http://localhost:3000",
+        "http://localhost:8000",
         "http://localhost:5173",
-        "https://8vxrhkz9-3000.inc1.devtunnels.ms",
+        "https://8vxrhkz9-8000.inc1.devtunnels.ms",
       ],
       credentials: true,
     })

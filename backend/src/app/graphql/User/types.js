@@ -10,8 +10,6 @@ exports.type = `#graphql
     followedArtists: [Artist!]  # Added for artist following
     savedTracks: [Song!]       # Changed from savedTracks
     savedAlbums: [Album!]       # Changed from savedAlbums
-    following: [User!]        # Changed from following
-    followers: [User!]          # Changed from followers
     artist: Artist
     # New fields
     firstName: String
