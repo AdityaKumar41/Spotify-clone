@@ -1512,6 +1512,23 @@ axios@^1.7.7:
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
+"backend@file:":
+  version "1.0.0"
+  resolved "file:"
+  dependencies:
+    "@apollo/server" "^4.11.0"
+    "@aws-sdk/client-s3" "^3.664.0"
+    "@aws-sdk/s3-request-presigner" "^3.664.0"
+    "@prisma/client" "^5.19.1"
+    axios "^1.7.7"
+    backend "file:"
+    body-parser "^1.20.3"
+    cors "^2.8.5"
+    dotenv "^16.4.5"
+    express "^4.21.0"
+    graphql "^16.9.0"
+    jsonwebtoken "^9.0.2"
+
 balanced-match@^1.0.0:
   version "1.0.2"
   resolved "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz"

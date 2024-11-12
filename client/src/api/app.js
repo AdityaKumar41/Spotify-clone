@@ -1,7 +1,7 @@
 import { GraphQLClient } from "graphql-request";
 
 export const graphqlClient = new GraphQLClient(
-  "https://8vxrhkz9-7000.inc1.devtunnels.ms/graphql",
+  "https://spotify-clone-yi50.onrender.com/graphql",
   {
     headers: () => {
       const token = localStorage.getItem("fy_token");
