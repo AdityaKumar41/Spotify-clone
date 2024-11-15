@@ -12,10 +12,10 @@ async function serverInit() {
   app.use(
     cors({
       origin: [
-        "http://localhost:8000",
+        "http://localhost:9000",
         "http://localhost:5173",
-        "https://8vxrhkz9-8000.inc1.devtunnels.ms",
-        "https://spotify-clone-b326.vercel.app/"
+        "https://8vxrhkz9-9000.inc1.devtunnels.ms",
+        "https://spotify-clone-b326.vercel.app",
       ],
       credentials: true,
     })

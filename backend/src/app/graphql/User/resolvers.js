@@ -405,6 +405,12 @@ const Query = {
         throw new Error("Invalid genre ID format");
       }
 
+      // Ensure offset is an integer
+      const parsedOffset = parseInt(offset, 10);
+      if (isNaN(parsedOffset)) {
+        throw new Error("Invalid offset value");
+      }
+
       const genre = await prismaClient.genre.findUnique({
         where: {
           id: genreId,
@@ -420,7 +426,7 @@ const Query = {
               releaseDate: "desc", // Sort songs by release date
             },
             take: limit, // Limit the number of songs returned
-            skip: offset, // Skip the number of songs based on offset
+            skip: parsedOffset, // Use the parsed offset
           },
           artists: {
             include: {
@@ -432,8 +438,12 @@ const Query = {
       });
 
       if (!genre) {
+        console.error(`Genre with ID ${id} not found`); // Improved logging
         throw new Error(`Genre with ID ${id} not found`);
       }
+
+      // Ensure songs is always an array
+      genre.songs = genre.songs || [];
 
       console.log("Found genre:", {
         id: genre.id,
@@ -449,9 +459,7 @@ const Query = {
     }
   },
 
-
   getFollowedArtists: async (_parent, { userId, limit, offset }, context) => {
-    
     const follows = await prismaClient.follow.findMany({
       where: { userId: parseInt(userId) },
       include: {
@@ -459,29 +467,29 @@ const Query = {
           include: {
             songs: true,
             albums: true,
-            genres: true
-          }
-        }
+            genres: true,
+          },
+        },
       },
       take: limit,
       skip: offset,
-      orderBy:{
-        followedAt: 'desc'
-      }
-      });
-    return follows.map(follow => follow.artist);
+      orderBy: {
+        followedAt: "desc",
+      },
+    });
+    return follows.map((follow) => follow.artist);
   },
 
   isFollowingArtist: async (_parent, { artistId }, context) => {
     if (!context.user) return false;
-    
+
     const follow = await prismaClient.follow.findUnique({
       where: {
         userId_artistId: {
           userId: context.user.id,
-          artistId: parseInt(artistId)
-        }
-      }
+          artistId: parseInt(artistId),
+        },
+      },
     });
     return !!follow;
   },
@@ -894,7 +902,7 @@ const Mutation = {
       });
       return true;
     } catch (error) {
-      if (error.code === 'P2002') {
+      if (error.code === "P2002") {
         throw new Error("Already following this artist");
       }
       console.error("Error following artist:", error);
@@ -914,12 +922,12 @@ const Mutation = {
           userId_artistId: {
             userId: context.user.id,
             artistId: parsedArtistId,
-          }
+          },
         },
       });
       return true;
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (error.code === "P2025") {
         throw new Error("Not following this artist");
       }
       console.error("Error unfollowing artist:", error);
