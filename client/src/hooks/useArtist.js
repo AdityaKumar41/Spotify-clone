@@ -1,32 +1,59 @@
-import { gql } from 'graphql-request';
-import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { graphqlClient } from '../api/app';
+import { gql } from "graphql-request";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
+import { graphqlClient } from "../api/app";
 
 const CREATE_ARTIST_MUTATION = gql`
-mutation Mutation($artistName: String!, $bio: String, $profilePicture: String, $facebook: String, $twitter: String, $instagram: String, $website: String, $country: String, $genre: [String!]) {
-  createArtist(artistName: $artistName, bio: $bio, profilePicture: $profilePicture, facebook: $facebook, twitter: $twitter, instagram: $instagram, website: $website, country: $country, genre: $genre) {
-    id
+  mutation Mutation(
+    $artistName: String!
+    $bio: String
+    $profilePicture: String
+    $facebook: String
+    $twitter: String
+    $instagram: String
+    $website: String
+    $country: String
+    $genre: [String!]
+  ) {
+    createArtist(
+      artistName: $artistName
+      bio: $bio
+      profilePicture: $profilePicture
+      facebook: $facebook
+      twitter: $twitter
+      instagram: $instagram
+      website: $website
+      country: $country
+      genre: $genre
+    ) {
+      id
+    }
   }
-}
 `;
 
 export const useCreateArtist = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (input) => {
       const variables = {
-        artistName: String(input.artistName || ''),
+        artistName: String(input.artistName || ""),
         bio: input.bio ? String(input.bio) : null,
-        profilePicture: input.profilePicture ? String(input.profilePicture) : null,
+        profilePicture: input.profilePicture
+          ? String(input.profilePicture)
+          : null,
         facebook: input.facebook ? String(input.facebook) : null,
         twitter: input.twitter ? String(input.twitter) : null,
         instagram: input.instagram ? String(input.instagram) : null,
         website: input.website ? String(input.website) : null,
         country: input.country ? String(input.country) : null,
-        genre: Array.isArray(input.genre) 
-          ? input.genre.map(g => String(g)) 
-          : []
+        genre: Array.isArray(input.genre)
+          ? input.genre.map((g) => String(g))
+          : [],
       };
 
       return await graphqlClient.request(CREATE_ARTIST_MUTATION, variables);
@@ -35,12 +62,12 @@ export const useCreateArtist = () => {
       queryClient.invalidateQueries(["me"]);
     },
     onError: (error) => {
-      console.error('Mutation Error:', {
+      console.error("Mutation Error:", {
         message: error.message,
         response: error.response,
-        request: error.request
+        request: error.request,
       });
-    }
+    },
   });
 };
 
@@ -63,7 +90,10 @@ export const useGetArtist = (id) => {
   return useInfiniteQuery({
     queryKey: ["artist", id],
     queryFn: async ({ pageParam = 0 }) => {
-      const { getArtist } = await graphqlClient.request(GET_ARTIST_QUERY, { getArtistId: id, offset: pageParam });
+      const { getArtist } = await graphqlClient.request(GET_ARTIST_QUERY, {
+        getArtistId: id,
+        offset: pageParam,
+      });
       return getArtist;
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -74,20 +104,23 @@ export const useGetArtist = (id) => {
     },
     enabled: !!id,
     onError: (error) => {
-      console.error('Query error:', error);
-    }
+      console.error("Query error:", error);
+    },
   });
 };
 
 export const useFollowArtist = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (artistId) => 
-      graphqlClient.request(`
+    mutationFn: (artistId) =>
+      graphqlClient.request(
+        `
         mutation followArtist($artistId: ID!) {
           followArtist(artistId: $artistId)
         }
-      `, { artistId }),
+      `,
+        { artistId }
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries(["me"]);
     },
@@ -108,12 +141,15 @@ export const useGetArtists = () => {
   return useInfiniteQuery({
     queryKey: ["artists"],
     queryFn: async ({ pageParam = 0 }) => {
-      const { getArtists } = await graphqlClient.request(GET_ARTISTS_QUERY, { limit: 2, offset: pageParam });
+      const { getArtists } = await graphqlClient.request(GET_ARTISTS_QUERY, {
+        limit: 10,
+        offset: pageParam,
+      });
       return getArtists;
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length === 2) {
-        return allPages.length * 2;
+      if (lastPage.length === 10) {
+        return allPages.length * 10;
       }
       return undefined;
     },
@@ -121,19 +157,22 @@ export const useGetArtists = () => {
 };
 
 const GET_FOLLOWED_ARTISTS_QUERY = gql`
- query Query($userId: ID!, $limit: Int, $offset: Int) {
-  getFollowedArtists(userId: $userId, limit: $limit, offset: $offset) {
-    id
-    image
+  query Query($userId: ID!, $limit: Int, $offset: Int) {
+    getFollowedArtists(userId: $userId, limit: $limit, offset: $offset) {
+      id
+      image
+    }
   }
-}
 `;
 
 export const useGetFollowedArtists = (userId) => {
   return useInfiniteQuery({
     queryKey: ["followedArtists", userId],
     queryFn: async ({ pageParam = 0 }) => {
-      const { getFollowedArtists } = await graphqlClient.request(GET_FOLLOWED_ARTISTS_QUERY, { userId, limit: 10, offset: pageParam });
+      const { getFollowedArtists } = await graphqlClient.request(
+        GET_FOLLOWED_ARTISTS_QUERY,
+        { userId, limit: 10, offset: pageParam }
+      );
       return getFollowedArtists;
     },
     getNextPageParam: (lastPage, allPages) => {

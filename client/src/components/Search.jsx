@@ -6,7 +6,7 @@ import { useContext, useState, useEffect, useMemo } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 import { useGetArtists } from "../hooks/useArtist";
 import { Skeleton } from "@nextui-org/skeleton";
-import { useInView } from 'react-intersection-observer';
+import { useInView } from "react-intersection-observer";
 
 export default function Search() {
   const { data: user } = useMe();
@@ -15,7 +15,9 @@ export default function Search() {
   const navigate = useNavigate();
 
   const { ref: songsRef, inView: songsInView } = useInView({ threshold: 1.0 });
-  const { ref: artistsRef, inView: artistsInView } = useInView({ threshold: 1.0 });
+  const { ref: artistsRef, inView: artistsInView } = useInView({
+    threshold: 1.0,
+  });
 
   const {
     data: searchResults,
@@ -51,9 +53,18 @@ export default function Search() {
 
   const getGenreColor = (index) => {
     const colors = [
-      "#E13300", "#056952", "#8400E7", "#1E3264",
-      "#537D1C", "#E1118C", "#B42F95", "#C74B16",
-      "#BA5D07", "#0D72EA", "#8D67AB", "#E13300",
+      "#E13300",
+      "#056952",
+      "#8400E7",
+      "#1E3264",
+      "#537D1C",
+      "#E1118C",
+      "#B42F95",
+      "#C74B16",
+      "#BA5D07",
+      "#0D72EA",
+      "#8D67AB",
+      "#E13300",
     ];
     return colors[index % colors.length];
   };
@@ -63,7 +74,10 @@ export default function Search() {
       <header className="flex items-center gap-4 p-4">
         <IconHome size={24} onClick={() => navigate("/")} />
         <div className="relative flex-1 max-w-md bg-neutral-800 text-white p-2 rounded-full">
-          <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={16} />
+          <IconSearch
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400"
+            size={16}
+          />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -74,10 +88,13 @@ export default function Search() {
         <div className="ml-auto flex items-center gap-2">
           <Link to={user?.me?.isArtist ? `/artist/profile` : `/profile`}>
             <img
-              className={`rounded-full ${user?.me?.artist ? 'border-2 border-purple-500' : ''}`}
+              className={`rounded-full ${
+                user?.me?.artist ? "border-2 border-purple-500" : ""
+              }`}
               src={user?.me?.artist?.image || user?.me?.profileImage}
-              alt={user?.me?.artist ? 'artist_profile' : 'user_profile'}
-              width={40} height={40}
+              alt={user?.me?.artist ? "artist_profile" : "user_profile"}
+              width={40}
+              height={40}
             />
           </Link>
         </div>
@@ -116,7 +133,9 @@ export default function Search() {
                 )}
                 <div ref={songsRef} className="h-4">
                   {hasMoreSongs && isSearching && (
-                    <div className="text-center text-white">Loading more songs...</div>
+                    <div className="text-center text-white">
+                      Loading more songs...
+                    </div>
                   )}
                 </div>
               </div>
@@ -131,7 +150,10 @@ export default function Search() {
             {genresLoading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {[1, 2, 3, 4].map((index) => (
-                  <Skeleton key={index} className="relative overflow-hidden rounded-lg h-48 bg-neutral-800" />
+                  <Skeleton
+                    key={index}
+                    className="relative overflow-hidden rounded-lg h-48 bg-neutral-800"
+                  />
                 ))}
               </div>
             ) : (
@@ -141,13 +163,16 @@ export default function Search() {
                     key={genre.id}
                     to={`/genres/${genre.id}`}
                     state={{ color: getGenreColor(index) }}
-                    className="relative overflow-hidden rounded-lg h-48 p-4 transition-all hover:scale-[1.02]"
+                    className="relative overflow-hidden rounded-lg h-32 md:h-48 p-4 transition-all hover:scale-[1.02]"
                     style={{
                       backgroundColor: getGenreColor(index),
-                      backgroundImage: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%)",
+                      backgroundImage:
+                        "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%)",
                     }}
                   >
-                    <h2 className="text-3xl font-bold text-white">{genre.name}</h2>
+                    <h2 className="text-3xl font-bold text-white">
+                      {genre.name}
+                    </h2>
                   </Link>
                 ))}
               </div>
@@ -157,7 +182,10 @@ export default function Search() {
             {artistsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((index) => (
-                  <Skeleton key={index} className="flex items-center p-4 bg-neutral-800 rounded-lg" />
+                  <Skeleton
+                    key={index}
+                    className="flex items-center p-4 bg-neutral-800 rounded-lg"
+                  />
                 ))}
               </div>
             ) : (
@@ -174,7 +202,9 @@ export default function Search() {
                       className="w-[60px] h-[60px] rounded-full object-cover mr-4"
                     />
                     <div>
-                      <h3 className="font-semibold text-white text-lg">{artist.name}</h3>
+                      <h3 className="font-semibold text-white text-lg">
+                        {artist.name}
+                      </h3>
                       <p className="text-sm text-neutral-400">Artist</p>
                     </div>
                     <IconMusic className="ml-auto w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -182,7 +212,9 @@ export default function Search() {
                 ))}
                 <div ref={artistsRef} className="h-4">
                   {hasMoreArtists && artistsLoading && (
-                    <div className="text-center text-white">Loading more artists...</div>
+                    <div className="text-center text-white">
+                      Loading more artists...
+                    </div>
                   )}
                 </div>
               </div>

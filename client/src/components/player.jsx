@@ -30,6 +30,33 @@ const Player = () => {
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+        return; // Ignore keydown events if typing in an input or textarea
+      }
+
+      if (e.key === " ") {
+        e.preventDefault(); // Prevent default scrolling behavior
+        if (playStatus) {
+          pause();
+        } else {
+          play();
+        }
+      }
+
+      if (e.key === "f") {
+        setIsFullScreen((prev) => !prev);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [playStatus, play, pause]);
+
+  useEffect(() => {
     if (seekBar.current) {
       seekBar.current.style.width = `${
         ((time.currentTime.seconds + time.currentTime.minute * 60) /
@@ -71,7 +98,13 @@ const Player = () => {
     <>
       {/* Full Screen View */}
       {isFullScreen && (
-        <div className="fixed inset-0 z-50 text-white">
+        <div
+          className={`fixed inset-0 z-50 text-white transition-transform duration-500 ease-in-out ${
+            isFullScreen
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-full"
+          }`}
+        >
           {/* Top glassy gradient background */}
           <div
             className="absolute inset-0 backdrop-blur-[100px]"

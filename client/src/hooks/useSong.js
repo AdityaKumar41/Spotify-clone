@@ -1,5 +1,10 @@
 import { gql } from "graphql-request";
-import { useQueryClient, useMutation, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  useQueryClient,
+  useMutation,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import { graphqlClient } from "../api/app";
 
 const CREATE_SONG_MUTATION = gql`
@@ -101,8 +106,8 @@ const GET_GENRES_QUERY = gql`
 `;
 
 const GET_GENRE_QUERY_BY_ID = gql`
-  query GetGenre($getGenreId: ID!, $limit: Int, $offset: Int) {
-  getGenre(id: $getGenreId, limit: $limit, offset: $offset) {
+  query GetGenre($id: ID!, $limit: Int, $offset: Int) {
+    getGenre(id: $id, limit: $limit, offset: $offset) {
       name
       id
       songs {
@@ -139,7 +144,9 @@ export const useCreateSong = () => {
       return data.createSong;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["songs", "songsByArtist"] });
+      queryClient.invalidateQueries({
+        queryKey: ["songs", "songsByArtist", artistId],
+      });
     },
     onError: (error) => {
       console.error("Mutation error:", error);
@@ -151,7 +158,10 @@ export const useGetSongs = () => {
   return useInfiniteQuery({
     queryKey: ["songs"],
     queryFn: async ({ pageParam = 0 }) => {
-      const { getSongs } = await graphqlClient.request(GET_SONGS_QUERY, { limit: 10, offset: pageParam });
+      const { getSongs } = await graphqlClient.request(GET_SONGS_QUERY, {
+        limit: 10,
+        offset: pageParam,
+      });
       return getSongs;
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -233,19 +243,16 @@ export const useGetGenre = (id) => {
   return useInfiniteQuery({
     queryKey: ["genre", id],
     queryFn: async ({ pageParam = 0 }) => {
-      const { getGenre } = await graphqlClient.request(
-        GET_GENRE_QUERY_BY_ID,
-        {
-          getGenreId: id,
-          limit: 2,
-          offset: pageParam,
-        }
-      );
+      const { getGenre } = await graphqlClient.request(GET_GENRE_QUERY_BY_ID, {
+        id,
+        limit: 10,
+        offset: pageParam,
+      });
       return getGenre;
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length === 2) {
-        return allPages.length * 2;
+      if (lastPage.songs.length === 10) {
+        return allPages.length * 10;
       }
       return undefined;
     },

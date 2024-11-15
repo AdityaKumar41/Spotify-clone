@@ -12,30 +12,34 @@ import { useGetGenre } from "../hooks/useSong";
 import { useContext, useEffect, useState } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 import Navbar from "./Navbar";
-import { useInView } from 'react-intersection-observer'; // Import the intersection observer
+import { useInView } from "react-intersection-observer"; // Import the intersection observer
 
 export default function DisplayGenre() {
   const { id } = useParams();
   const location = useLocation();
   const genreColor = location.state?.color || "#1E3264"; // Default color if none provided
-  const { data: tempgen, isLoading, error, fetchNextPage, hasNextPage } = useGetGenre(id);
-  const genre = tempgen?.pages[0]; 
-  const { 
-    track, 
-    playStatus, 
-    setTrack,
-    audioRef,
-    play,
-    pause
-  } = useContext(PlayerContext);
+  const {
+    data: tempgen,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+  } = useGetGenre(id);
+  const genre = tempgen?.pages[0];
+  const { track, playStatus, setTrack, audioRef, play, pause, setPlaylist } =
+    useContext(PlayerContext);
 
-  const { ref: loadMoreRef, inView } = useInView(); 
+  const { ref: loadMoreRef, inView } = useInView();
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (inView && !isLoading && hasNextPage && !loadingMore) {
+      console.log("Fetching next page..."); // Debug log
       setLoadingMore(true); // Set loading state
-      fetchNextPage().finally(() => setLoadingMore(false)); // Reset loading state after fetch
+      fetchNextPage().finally(() => {
+        console.log("Finished fetching next page."); // Debug log
+        setLoadingMore(false); // Reset loading state after fetch
+      });
     }
   }, [inView, isLoading, hasNextPage, fetchNextPage, loadingMore]);
 
@@ -72,22 +76,25 @@ export default function DisplayGenre() {
       .map((song) => song.coverImage);
   };
 
-  // Update handlePlayAll function with debug logs
+  // Update handlePlayAll function to set the playlist in context
   const handlePlayAll = async () => {
     if (genre?.songs?.length > 0) {
       const firstPlayableSong = genre.songs[0]; // Get first song
 
       console.log("First playable song:", firstPlayableSong);
-      
+
       if (firstPlayableSong?.fileUrl) {
         try {
-          // Set track with all necessary properties
+          // Set the playlist in context
           setTrack({
             ...firstPlayableSong,
             id: firstPlayableSong._id, // Use the actual _id instead of fileUrl
-            name: firstPlayableSong.artist?.name || "Unknown Artist"
+            name: firstPlayableSong.artist?.name || "Unknown Artist",
           });
-          
+
+          // Set the entire playlist in context
+          setPlaylist(genre.songs);
+
           // Wait for audio to load before playing
           audioRef.current.src = firstPlayableSong.fileUrl;
           await audioRef.current.load();
@@ -117,9 +124,9 @@ export default function DisplayGenre() {
         setTrack({
           ...song,
           id: song._id, // Use the actual _id instead of fileUrl
-          name: song.artist?.name || "Unknown Artist"
+          name: song.artist?.name || "Unknown Artist",
         });
-        
+
         // Wait for audio to load before playing
         audioRef.current.src = song.fileUrl;
         await audioRef.current.load();
@@ -154,7 +161,7 @@ export default function DisplayGenre() {
     );
   }
 
-  console.log('genere', genre)
+  console.log("genere", genre);
 
   // Render
   return (
@@ -201,6 +208,11 @@ export default function DisplayGenre() {
               <h1 className="text-4xl md:text-8xl font-bold my-2 md:my-4 truncate">
                 {genre?.name}
               </h1>
+              {/* <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
+                <span className="font-medium flex gap-2 items-center">
+                  <img src="/AudioFy-md.svg" alt="" className="w-20 h-7" />
+                </span>
+              </div> */}
               <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
                 <span className="font-medium">
                   {genre?.songs?.length || 0} songs
@@ -237,8 +249,12 @@ export default function DisplayGenre() {
                   <tr className="text-neutral-400 text-sm border-b border-neutral-700">
                     <th className="w-10 md:w-14 text-center pb-2">#</th>
                     <th className="text-left pb-2">Title</th>
-                    <th className="hidden md:table-cell text-left pb-2">Album</th>
-                    <th className="hidden md:table-cell text-left pb-2">Date Added</th>
+                    <th className="hidden md:table-cell text-left pb-2">
+                      Album
+                    </th>
+                    <th className="hidden md:table-cell text-left pb-2">
+                      Date Added
+                    </th>
                     <th className="w-8 md:w-16 text-center pb-2">
                       <IconClock className="w-4 h-4 mx-auto" />
                     </th>
@@ -253,12 +269,11 @@ export default function DisplayGenre() {
                       }`}
                       onClick={() => handleSongPlay(song)}
                     >
-                      
                       <td className="text-center p-2">{index + 1}</td>
-                      
+
                       <td className="py-2">
                         <div className="flex items-center gap-2 md:gap-4 align-middle">
-                        <button
+                          <button
                             onClick={() => handleSongPlay(song)}
                             className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900 hover:bg-neutral-800 transition-all"
                           >
@@ -268,8 +283,7 @@ export default function DisplayGenre() {
                               <IconPlayerPlayFilled className="w-5 h-5" />
                             )}
                           </button>
-                        <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
-                          
+                          <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
                             {song.coverImage ? (
                               <img
                                 src={song.coverImage}
@@ -290,14 +304,15 @@ export default function DisplayGenre() {
                           </div>
                         </div>
                       </td>
-                      <td className="hidden md:table-cell text-neutral-400">{song.album?.name || "-"}</td>
+                      <td className="hidden md:table-cell text-neutral-400">
+                        {song.album?.name || "-"}
+                      </td>
                       <td className="hidden md:table-cell text-neutral-400">
                         {formatDate(song.releaseDate)}
                       </td>
                       <td className="text-center text-neutral-400">
                         {formatDuration(song.duration)}
                       </td>
-                      
                     </tr>
                   ))}
                 </tbody>

@@ -16,9 +16,13 @@ import {
   IconBrandTwitter,
   IconBrandInstagram,
 } from "@tabler/icons-react";
-import { useFollowArtist, useUnfollowArtist, useIsFollowingArtist } from "../hooks/useUser";
+import {
+  useFollowArtist,
+  useUnfollowArtist,
+  useIsFollowingArtist,
+} from "../hooks/useUser";
 import { useMe } from "../hooks/useUser";
-import { useInView } from 'react-intersection-observer'; // Import the Intersection Observer hook
+import { useInView } from "react-intersection-observer"; // Import the Intersection Observer hook
 
 const getArtistGradient = (artistId) => {
   // Simple array of gradient pairs
@@ -75,24 +79,31 @@ const formatDate = (timestamp) => {
 const DisplayArtist = () => {
   const { id } = useParams();
   const { ref: loadMoreRef, inView } = useInView();
-  const { data: tempData, fetchNextPage: fetchNextSongs, hasNextPage: hasNextSongs, isLoading: isSongsLoading, error: songsError } = useGetSongByArtist(id);
+  const {
+    data: tempData,
+    fetchNextPage: fetchNextSongs,
+    hasNextPage: hasNextSongs,
+    isLoading: isSongsLoading,
+    error: songsError,
+  } = useGetSongByArtist(id);
   const albumData = tempData ? tempData.pages.flatMap((page) => page) : [];
-  const { track, playStatus, setTrack, audioRef, play, pause } = useContext(PlayerContext);
-  const { data: updateFollow, isLoading: checkingFollow } = useIsFollowingArtist(id);
+  const { track, playStatus, setTrack, audioRef, play, pause } =
+    useContext(PlayerContext);
+  const { data: updateFollow, isLoading: checkingFollow } =
+    useIsFollowingArtist(id);
   const { mutate: followArtist, isLoading: followLoading } = useFollowArtist();
-  const { mutate: unfollowArtist, isLoading: unfollowLoading } = useUnfollowArtist();
+  const { mutate: unfollowArtist, isLoading: unfollowLoading } =
+    useUnfollowArtist();
   const { data: meData } = useMe();
   const me = meData?.me;
   const isFollowing = updateFollow?.isFollowingArtist;
 
-
-    // Fetch songs when the component is in view
-    useEffect(() => {
-      if (inView && hasNextSongs) {
-        fetchNextSongs(); // Fetch next songs when in view
-      }
-    }, [inView, fetchNextSongs, hasNextSongs]);
-
+  // Fetch songs when the component is in view
+  useEffect(() => {
+    if (inView && hasNextSongs) {
+      fetchNextSongs(); // Fetch next songs when in view
+    }
+  }, [inView, fetchNextSongs, hasNextSongs]);
 
   if (isSongsLoading) {
     return (
@@ -110,19 +121,23 @@ const DisplayArtist = () => {
     );
   }
 
-
   const handlePlayAll = async () => {
     if (albumData?.length > 0) {
       const firstSong = albumData[0];
       try {
-        setTrack({
-          ...firstSong,
-          name: firstSong.artist?.name || "Unknown Artist",
-        });
-        audioRef.current.src = firstSong.fileUrl;
-        await audioRef.current.load();
-        await audioRef.current.play();
-        play();
+        if (track?.fileUrl === firstSong.fileUrl && playStatus) {
+          pause();
+          audioRef.current.pause();
+        } else {
+          setTrack({
+            ...firstSong,
+            name: firstSong.artist?.name || "Unknown Artist",
+          });
+          audioRef.current.src = firstSong.fileUrl;
+          await audioRef.current.load();
+          await audioRef.current.play();
+          play();
+        }
       } catch (error) {
         console.error("Error in handlePlayAll:", error);
       }
@@ -155,7 +170,6 @@ const DisplayArtist = () => {
     return track?.fileUrl === song.fileUrl && playStatus;
   };
 
-
   const handleFollowToggle = () => {
     if (!me) {
       return;
@@ -167,19 +181,17 @@ const DisplayArtist = () => {
 
     if (isFollowing) {
       unfollowArtist(id, {
-        onSuccess: () => {
-        },
+        onSuccess: () => {},
         onError: (error) => {
-          console.error('Unfollow error:', error);
-        }
+          console.error("Unfollow error:", error);
+        },
       });
     } else {
       followArtist(id, {
-        onSuccess: () => {
-        },
+        onSuccess: () => {},
         onError: (error) => {
-          console.error('Follow error:', error);
-        }
+          console.error("Follow error:", error);
+        },
       });
     }
   };
@@ -197,7 +209,12 @@ const DisplayArtist = () => {
   };
 
   // Improve loading state check to include artistData
-  if (!albumData || !Array.isArray(albumData) || albumData.length === 0 || !albumData[0]?.artist) {
+  if (
+    !albumData ||
+    !Array.isArray(albumData) ||
+    albumData.length === 0 ||
+    !albumData[0]?.artist
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
@@ -212,9 +229,6 @@ const DisplayArtist = () => {
     background: gradients.header,
     minHeight: "30vh",
   };
-
-
-  
 
   return (
     <>
@@ -245,19 +259,21 @@ const DisplayArtist = () => {
                 {showFollowButton() && (
                   <button
                     onClick={handleFollowToggle}
-                    disabled={checkingFollow || followLoading || unfollowLoading}
+                    disabled={
+                      checkingFollow || followLoading || unfollowLoading
+                    }
                     className={`px-4 py-2 rounded-full transition-all font-bold text-sm border-2 ${
-                      isFollowing 
-                        ? 'bg-neutral-800 text-white hover:bg-neutral-700 border-neutral-600' 
+                      isFollowing
+                        ? "bg-neutral-800 text-white hover:bg-neutral-700 border-neutral-600"
                         : `bg-[${gradients.solid}] text-white hover:bg-opacity-80 border-[${gradients.solid}]`
                     }`}
                   >
                     {checkingFollow || followLoading || unfollowLoading ? (
                       <span className="inline-block w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" />
                     ) : isFollowing ? (
-                      'Following'
+                      "Following"
                     ) : (
-                      'Follow'
+                      "Follow"
                     )}
                   </button>
                 )}
@@ -321,11 +337,14 @@ const DisplayArtist = () => {
                 className="w-14 h-14 flex items-center justify-center rounded-full hover:scale-105 transition-all group"
                 style={{ backgroundColor: gradients.solid }} // Apply solid color to play button
               >
-                <IconPlayerPlayFilled className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
+                {playStatus ? (
+                  <IconPlayerPauseFilled className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
+                ) : (
+                  <IconPlayerPlayFilled className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
+                )}
               </button>
             </div>
           )}
-
           {/* Table section - now with clean background */}
           <div className="overflow-x-auto">
             <table className="w-full table-auto">
@@ -347,8 +366,9 @@ const DisplayArtist = () => {
                 {albumData.map((song, index) => (
                   <tr
                     key={song.fileUrl}
-                    className={`group hover:bg-white/10 rounded-md text-sm text-neutral-400 
+                    className={`group hover:bg-white/10 rounded-md text-sm text-neutral-400 cursor-pointer
                       ${isPlaying(song) ? "bg-white/20" : ""}`}
+                    onClick={() => handleSongPlay(song)}
                   >
                     <td className="px-4 py-2 text-center">{index + 1}</td>
                     <td className="py-2">
@@ -417,9 +437,9 @@ const DisplayArtist = () => {
               </tbody>
             </table>
           </div>
-
           {/* Load more ref for infinite scroll */}
-          <div ref={loadMoreRef} className="h-10" /> {/* Empty div to trigger loading */}
+          <div ref={loadMoreRef} className="h-10" />{" "}
+          {/* Empty div to trigger loading */}
         </div>
       </div>
     </>
