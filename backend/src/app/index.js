@@ -9,14 +9,19 @@ const JWTServices = require("./jwt/jwt");
 
 async function serverInit() {
   const app = express();
-  app.use(
-    cors({
-      origin: [
+  
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : [
         "http://localhost:9000",
         "http://localhost:5173",
         "https://8vxrhkz9-9000.inc1.devtunnels.ms",
         "https://spotify-clone-b326.vercel.app",
-      ],
+      ];
+
+  app.use(
+    cors({
+      origin: allowedOrigins,
       credentials: true,
     })
   );
